@@ -26,6 +26,7 @@ const haIniciado = function (request, response, next) {
         response.redirect("/") // Redirige al login si no hay sesión
     }
 }
+// -----------------------------------------------------------
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
