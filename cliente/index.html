@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cliente</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+        <a id="navInicio" class="navbar-brand" href="#">Sistema</a>
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="cw.mostrarAcceso()">Acceder al Sistema</a>
+            </li>
+            <li class="nav-item" style="display: none;">
+                <a class="nav-link" href="#" onclick="cw.mostrarObtenerUsuarios()">Ver Usuarios</a>
+            </li>
+            <li class="nav-item" style="display: none;">
+                <a class="nav-link" href="#" onclick="cw.mostrarNumeroUsuarios()">Número Usuarios</a>
+            </li>
+            <li class="nav-item" style="display: none;">
+                <a class="nav-link" href="#" onclick="cw.mostrarUsuarioActivo()">Consultar Estado</a>
+            </li>
+            <li class="nav-item" style="display: none;">
+                <a class="nav-link" href="#" onclick="cw.mostrarEliminarUsuario()">Eliminar Usuario</a>
+            </li>
+            <li id="cerrarSesionItem" class="nav-item" style="display: none;">
+                <!-- Este enlace simple es el correcto, como depuramos -->
+                <a class="nav-link" href="/cerrarSession">Cerrar Sesión</a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h3>Sistema</h3>
+        <!-- La UI (login/registro) se carga aquí -->
+        <div id="au"></div>
+        <!-- Los mensajes (éxito/error) se cargan aquí -->
+        <div id="msg"></div>
+    </div>
+
+    <div id="g_id_onload" data-client_id="GOOGLE_CLIENT_ID_PLACEHOLDER"
+        data-login_uri="http://localhost:3000/oneTap/callback" data-auto_prompt="true" data-context="signin"
+        data-skip_prompt_cookie="nick">
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+
+    <!-- Cargamos los scripts -->
+    <script src="./controlWeb.js"></script>
+    <script src="./clienteRest.js"></script>
+
+    <!-- Script de inicialización CORREGIDO -->
+    <script>
+        // 1. Creamos 'cw' (ControlWeb) PRIMERO.
+        const cw = new ControlWeb();
+
+        // 2. Le pasamos 'cw' a ClienteRest
+        const rest = new ClienteRest(cw);
+
+        // 3. Cuando el documento esté listo, comprobamos la sesión.
+        $(document).ready(function () {
+            cw.comprobarSesion();
+        });
+    </script>
+
+</body>
+
+</html>

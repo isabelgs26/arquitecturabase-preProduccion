@@ -1,0 +1,32 @@
+<div id="fmRegistro">
+    <form>
+        <div class="card mt-3">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Registro de Nuevo Usuario</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="apellidos">Apellidos:</label>
+                    <input type="text" class="form-control" placeholder="Apellidos" id="apellidos" required>
+                </div>
+                <div class="form-group">
+                    <label for="nombre">Nombre:</label>
+                    <input type="text" class="form-control" placeholder="Nombre" id="nombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email address:</label>
+                    <input type="email" class="form-control" placeholder="Introduce email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="pwd">Password:</label>
+                    <input type="password" class="form-control" placeholder="Introduce password" id="pwd" required>
+                </div>
+
+                <button type="submit" id="btnRegistro" class="btn btn-primary btn-block mt-4">Registrar</button>
+                <button type="button" id="btnVolver" class="btn btn-link btn-block mt-2"
+                    onclick="cw.mostrarAcceso();">Volver al Inicio</button>
+            </div>
+        </div>
+    </form>
+</div>
