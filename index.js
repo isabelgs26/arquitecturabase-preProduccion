@@ -17,12 +17,13 @@ require("./servidor/passport-setup.js");
 
 const PORT = process.env.PORT || 3000;
 
+// --- TAREA 2.8: Definición del Middleware haIniciado() ---
 const haIniciado = function (request, response, next) {
-    if (request.user) {
-        next();
+    if (request.user) { // Passport almacena el usuario en request.user si está autenticado
+        next(); // Continúa la petición
     }
     else {
-        response.redirect("/")
+        response.redirect("/") // Redirige al login si no hay sesión
     }
 }
 
@@ -121,16 +122,15 @@ app.get("/confirmarUsuario/:email/:key", function (request, response) {
 });
 
 
-// --- RUTAS API PROTEGIDAS CON haIniciado ---
+// --- RUTAS API ASEGURADAS (Tarea 2.8) ---
 
-// 1. Obtener Usuarios
+// Protegida: Obtener la lista de usuarios
 app.get("/obtenerUsuarios", haIniciado, function (req, res) {
     sistema.obtenerUsuarios(function (usuarios) {
         res.json(usuarios);
     });
 });
 
-// Rutas de Login/Registro (Deben ser accesibles siempre)
 app.post("/registrarUsuario", function (req, res) {
     let obj = req.body;
     sistema.registrarUsuario(obj, function (resultado) {
@@ -151,8 +151,7 @@ app.get("/ok", function (request, response) {
     response.send({ nick: nick });
 });
 
-
-// 2. Usuario Activo
+// Protegida: Consultar estado de usuario
 app.get("/usuarioActivo/:email", haIniciado, function (req, res) {
     let email = req.params.email;
     sistema.usuarioActivo(email, function (resultado) {
@@ -160,14 +159,14 @@ app.get("/usuarioActivo/:email", haIniciado, function (req, res) {
     });
 });
 
-// 3. Número de Usuarios
+// Protegida: Contar número de usuarios
 app.get("/numeroUsuarios", haIniciado, function (req, res) {
     sistema.numeroUsuarios(function (resultado) {
         res.json(resultado);
     });
 });
 
-// 4. Eliminar Usuario
+// Protegida: Eliminar usuario
 app.get("/eliminarUsuario/:email", haIniciado, function (req, res) {
     let email = req.params.email;
     sistema.eliminarUsuario(email, function (resultado) {
