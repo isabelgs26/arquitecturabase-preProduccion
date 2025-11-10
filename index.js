@@ -17,6 +17,8 @@ require("./servidor/passport-setup.js");
 
 const PORT = process.env.PORT || 3000;
 
+const ONETAP_URL = process.env.ONETAP_CALLBACK_URL || "http://localhost:3000/oneTap/callback";
+
 // --- TAREA 2.8: Definición del Middleware haIniciado() ---
 const haIniciado = function (request, response, next) {
     if (request.user) { // Passport almacena el usuario en request.user si está autenticado
@@ -35,7 +37,13 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get("/", function (request, response) {
     let contenido = fs.readFileSync(__dirname + "/cliente/index.html", "utf8");
+
+    // Reemplaza GOOGLE_CLIENT_ID_PLACEHOLDER
     contenido = contenido.replace("GOOGLE_CLIENT_ID_PLACEHOLDER", process.env.GOOGLE_CLIENT_ID);
+
+    // --- CAMBIO CLAVE: Inyectar la URL de One Tap ---
+    contenido = contenido.replace("DATA_LOGIN_URI_PLACEHOLDER", ONETAP_URL);
+
     response.setHeader("Content-type", "text/html");
     response.send(contenido);
 });
