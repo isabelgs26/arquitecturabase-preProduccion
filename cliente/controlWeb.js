@@ -107,6 +107,9 @@ function ControlWeb() {
     };
 
     this.salir = function () {
+        $.removeCookie("nick");
+        location.reload();
+        cw.mostrarAcceso();
     };
 
     this.mostrarObtenerUsuarios = function () {
@@ -227,4 +230,10 @@ function ControlWeb() {
 
         $(".container").prepend(html);
     };
+    this.mostrarModal = function (m) {
+        $("#msg").remove();
+        let cadena = "<div id='msg'>" + m + "</div>";
+        $('#mBody').append(cadena)
+        $('#miModal').modal();
+    }
 }
