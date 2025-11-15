@@ -12,6 +12,13 @@ const LocalStrategy = require('passport-local').Strategy;
 
 const sistema = new modelo.Sistema({ test: false });
 const app = express();
+const httpServer = require('http').Server(app);
+const { Server } = require("socket.io");
+
+const moduloWS = require("./servidor/servidorWS.js");
+
+let ws = new moduloWS.WSServer();
+let io = new Server();
 
 require("./servidor/passport-setup.js");
 
@@ -185,9 +192,12 @@ app.get("/eliminarUsuario/:email", haIniciado, function (req, res) {
 
 sistema.inicializar().then(() => {
     console.log("Sistema inicializado con base de datos");
-    app.listen(PORT, () => {
-        console.log(`Servidor escuchando en el puerto ${PORT}`);
+    httpServer.listen(PORT, () => {
+        console.log(`App está escuchando en el puerto ${PORT}`);
+        console.log('Ctrl+C para salir');
     });
+    io.listen(httpServer);
+    ws.lanzarServidor(io, sistema);
 }).catch(err => {
     console.error("Error inicializando sistema:", err);
 });
