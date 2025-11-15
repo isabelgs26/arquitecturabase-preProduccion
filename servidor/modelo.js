@@ -8,11 +8,8 @@ function Sistema(objConfig = {}) {
 }
 
 Sistema.prototype.inicializar = async function () {
-    console.log("Inicializando sistema y conexión a BD (modelo.js)...");
     if (!this.test) {
-        console.log("Modo Producción: Conectando a MongoDB...");
         await this.cad.conectar();
-        console.log("Conexión a BD (modelo.js) completada.");
     } else {
         console.log("Modo Test: Omitiendo conexión a MongoDB.");
     }

@@ -1,19 +1,25 @@
 function CAD() {
     const mongo = require("mongodb").MongoClient;
     const ObjectId = require("mongodb").ObjectId;
-
+    const gv = require('./gestorVariables.js');
     this.usuarios = null;
 
     this.conectar = async function () {
         let cad = this;
-        const mongoUrl = process.env.MONGODB_URI;
+
+        const mongoUrl = await gv.obtenerMongoURI();
+
+        if (!mongoUrl) {
+            console.error("Error: MONGODB_URI no se pudo cargar desde Secret Manager.");
+            throw new Error("No se pudo cargar la cadena de conexión de MongoDB");
+        }
+
         let client = new mongo(mongoUrl, { useUnifiedTopology: true });
 
         try {
             await client.connect();
             const database = client.db("sistema");
             cad.usuarios = database.collection("usuarios");
-            console.log("Conexión a BD (cad.js) exitosa y 'cad.usuarios' asignado.");
         } catch (err) {
             console.error("Error al conectar a MongoDB (cad.js):", err);
             throw new Error("No se pudo conectar a la base de datos");
