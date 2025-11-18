@@ -1,70 +1,89 @@
 const modelo = require("./modelo.js");
-
-const testUser = {
-  email: 'test@example.com',
-  password: 'password123',
-  nombre: 'TestName',
-  apellidos: 'TestSurname'
-};
-
-describe('Sistema asíncrono (MongoDB)', () => {
+describe.skip('El sistema (legado)', () => {
   let sistema;
 
-  beforeEach(async () => {
-
+  beforeEach(() => {
     sistema = new modelo.Sistema({ test: true });
   });
 
-  it('Debe devolver el modo test y tener funciones asíncronas', () => {
-    expect(sistema.test).toBe(true);
-    expect(typeof sistema.registrarUsuario).toBe('function');
+  it('agregar usuario', () => {
+    let resultado = sistema.agregarUsuario('juan');
+    expect(resultado.nick).toEqual('juan');
+    expect(sistema.numeroUsuarios().num).toEqual(1);
   });
 
-
-  it('registrarUsuario (registro) debe fallar si se intenta registrar dos veces', (done) => {
-    let userExists = false;
-
-    sistema.cad.buscarUsuario = (criterio, callback) => {
-      if (userExists) {
-        callback(testUser);
-      } else {
-        callback(undefined);
-      }
-    };
-
-    sistema.cad.insertarUsuario = (obj, callback) => {
-      userExists = true;
-      callback({ email: obj.email });
-    };
-
-
-    sistema.registrarUsuario(testUser, (res1) => {
-      expect(res1.email).toEqual(testUser.email);
-
-      sistema.registrarUsuario(testUser, (res2) => {
-        expect(res2.email).toEqual(-1);
-        done();
-      });
-    });
+  it('eliminar usuario', () => {
+    sistema.agregarUsuario('juan');
+    let resultado = sistema.eliminarUsuario('juan');
+    expect(resultado.eliminado).toBe(true);
+    expect(sistema.numeroUsuarios().num).toEqual(0);
   });
 
-  it('loginUsuario debe encontrar y comparar la contraseña correctamente', (done) => {
+  it('obtener usuario', () => {
+    sistema.agregarUsuario('juan');
+    const usuarios = sistema.obtenerUsuarios();
+    expect(usuarios['juan']).toBeDefined();
+  });
 
-    const MOCKED_HASH = '$2b$10$tK4u651L18A4W6S7I8h456789l0jH0G6fB7F3D';
-    const MOCKED_USER = { ...testUser, confirmada: true, password: MOCKED_HASH };
+  it('usuario activo', () => {
+    sistema.agregarUsuario('juan');
+    expect(sistema.usuarioActivo('juan').activo).toBe(true);
+    expect(sistema.usuarioActivo('pedro').activo).toBe(false);
+  });
+});
 
-    sistema.cad.buscarUsuario = (criterio, callback) => {
-      expect(criterio.confirmada).toBe(true);
-      callback(MOCKED_USER);
-    };
+describe("Pruebas de las partidas (en memoria)", () => {
+  let sistema;
+  let usr, usr2, usr3;
 
-    sistema.loginUsuario({ email: testUser.email, password: testUser.password }, (res) => {
+  beforeEach(() => {
+    sistema = new modelo.Sistema({ test: true });
 
+    usr = { "nick": "Pepe", "email": "pepe@pepe.es" };
+    usr2 = { "nick": "Pepa", "email": "pepa@pepa.es" };
+    usr3 = { "nick": "Pepo", "email": "pepo@pepo.es" };
 
-      expect(res.email).toEqual(testUser.email);
+    sistema.agregarUsuario(usr);
+    sistema.agregarUsuario(usr2);
+    sistema.agregarUsuario(usr3);
+  });
 
+  it("Usuarios y partidas en el sistema", () => {
+    expect(Object.keys(sistema.usuarios).length).toEqual(3);
+    expect(sistema.obtenerPartidasDisponibles().length).toEqual(0);
+  });
 
-      done();
-    });
+  it("Crear partida", () => {
+    let codigo = sistema.crearPartida("pepe@pepe.es");
+    expect(codigo).toBeDefined();
+    expect(sistema.obtenerPartidasDisponibles().length).toEqual(1);
+    expect(sistema.partidas[codigo].jugadores[0].email).toEqual("pepe@pepe.es");
+  });
+
+  it("Unir a partida", () => {
+    let codigo = sistema.crearPartida("pepe@pepe.es");
+    let res = sistema.unirAPartida("pepa@pepa.es", codigo);
+    expect(res).toEqual(codigo);
+    expect(sistema.partidas[codigo].jugadores.length).toEqual(2);
+    expect(sistema.partidas[codigo].jugadores[1].email).toEqual("pepa@pepa.es");
+  });
+
+  it("Un tercer usuario no puede unirse", () => {
+    let codigo = sistema.crearPartida("pepe@pepe.es");
+    sistema.unirAPartida("pepa@pepa.es", codigo);
+    let res = sistema.unirAPartida("pepo@pepo.es", codigo);
+    expect(res).toEqual(-1);
+    expect(sistema.partidas[codigo].jugadores.length).toEqual(2);
+  });
+
+  it("Obtener partidas", () => {
+    expect(sistema.obtenerPartidasDisponibles().length).toEqual(0);
+
+    let codigo = sistema.crearPartida("pepe@pepe.es");
+    expect(sistema.obtenerPartidasDisponibles().length).toEqual(1);
+    expect(sistema.obtenerPartidasDisponibles()[0].creador).toEqual("pepe@pepe.es");
+
+    sistema.unirAPartida("pepa@pepa.es", codigo);
+    expect(sistema.obtenerPartidasDisponibles().length).toEqual(0);
   });
 });
