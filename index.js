@@ -119,6 +119,7 @@ app.get("/good", function (request, response) {
 
     sistema.usuarioGoogle({ "email": email, "nombre": userName }, function (obj) {
         response.cookie('nick', userName);
+        response.cookie('email', obj.email);
         response.redirect('/');
     });
 });

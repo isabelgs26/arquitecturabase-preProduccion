@@ -6,6 +6,12 @@ function ControlWeb() {
 
         if (nick) {
             cw.mostrarHome(nick);
+
+            if (!ws.email) {
+                let email = $.cookie("email");
+                ws.email = email;
+                console.log("Email recuperado de la cookie:", ws.email);
+            }
         } else {
             cw.mostrarAcceso();
             cw.ocultarBotonCerrarSesion();
@@ -104,6 +110,8 @@ function ControlWeb() {
         this.mostrarBotonCerrarSesion();
         let nickUsuario = nick || $.cookie("nick");
         cw.mostrarMensaje("Bienvenido de nuevo, " + nickUsuario, "exito");
+        this.mostrarCrearPartida();
+
     };
 
     this.salir = function () {
@@ -236,4 +244,64 @@ function ControlWeb() {
         $('#mBody').append(cadena)
         $('#miModal').modal();
     }
+    // --- FUNCIONES PARA LA GESTIÓN DE PARTIDAS ---
+    this.mostrarCrearPartida = function () {
+        // Añadimos un botón para crear partidas si no existe
+        if ($("#btnCrearPartida").length === 0) {
+            let html = `
+            <div id="zonaPartidas" class="card mt-4">
+                <div class="card-body">
+                    <h5>Partidas</h5>
+                    <button id="btnCrearPartida" class="btn btn-success">Crear Partida</button>
+                    <hr>
+                    <h6>Partidas Disponibles:</h6>
+                    <div id="listaPartidas">No hay partidas disponibles.</div>
+                </div>
+            </div>`;
+            $("#au").append(html);
+
+            $("#btnCrearPartida").on("click", function () {
+                ws.crearPartida();
+            });
+        }
+    };
+
+    this.mostrarEsperandoRival = function () {
+        this.limpiar();
+        let html = `
+        <div class="card mt-4 text-center">
+            <div class="card-body">
+                <h3>⌛ Esperando rival...</h3>
+                <p>Comparte este código si es necesario, o espera a que alguien se una.</p>
+                <div class="spinner-border text-primary" role="status"></div>
+                <br><br>
+                <button class="btn btn-danger" onclick="cw.mostrarHome();">Cancelar</button>
+            </div>
+        </div>`;
+        $("#au").append(html);
+        $("#btnCancelarPartida").on("click", function () {
+            ws.cancelarPartida();
+            cw.mostrarHome();
+        });
+    };
+
+    this.mostrarListaPartidas = function (lista) {
+        // Actualizamos la lista de partidas visibles
+        let listaDiv = $("#listaPartidas");
+        listaDiv.empty();
+
+        if (lista.length === 0) {
+            listaDiv.html("No hay partidas disponibles.");
+        } else {
+            let ul = '<ul class="list-group">';
+            lista.forEach(function (partida) {
+                ul += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                        Partida de ${partida.creador} (Código: ${partida.codigo})
+                        <button class="btn btn-primary btn-sm" onclick="ws.unirAPartida('${partida.codigo}')">Unirse</button>
+                       </li>`;
+            });
+            ul += '</ul>';
+            listaDiv.html(ul);
+        }
+    };
 }

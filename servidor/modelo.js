@@ -2,6 +2,12 @@ const datos = require("./cad.js");
 const bcrypt = require("bcrypt");
 const correo = require("./email.js");
 
+function Partida(codigo) {
+    this.codigo = codigo;
+    this.jugadores = [];
+    this.maxJug = 2;
+}
+
 function Sistema(objConfig = {}) {
     this.cad = new datos.CAD();
     this.test = objConfig.test || false;
@@ -11,59 +17,39 @@ function Sistema(objConfig = {}) {
         return (new Date()).getTime().toString().substr(-6);
     }
 
-    this.crearPartida = function (email) {
-        // obtener el objeto usuario con email = “email”
-        let usr = this.usuarios[email]; // USA 'this.usuarios'
+    this.crearPartida = function (email, callback) {
+        let modelo = this;
 
-        // si existe, entonces:
-        if (usr) {
-            // obtener un código único
-            let codigo = this.obtenerCodigo();
-
-            // crear partida con ese código
-            let partida = new Partida(codigo);
-
-            // asignar al usuario como jugador de la partida
-            partida.jugadores.push(usr);
-
-            // Guardar la partida en la colección del sistema
-            this.partidas[codigo] = partida;
-
-            // Devolver el código
-            return codigo;
-        }
-
-        // Si el usuario no existe, devolver -1 (o algo que indique error)
-        return -1;
+        // 1. Buscamos al usuario en la BD
+        this.cad.buscarUsuario({ "email": email }, function (usr) {
+            if (usr) {
+                let codigo = modelo.obtenerCodigo();
+                let partida = new Partida(codigo);
+                partida.jugadores.push(usr);
+                modelo.partidas[codigo] = partida;
+                callback(codigo); // Devolvemos el código
+            } else {
+                callback(-1); // Usuario no encontrado
+            }
+        });
     }
-    this.unirAPartida = function (email, codigo) {
-        // obtener el usuario cuyo email es “email”
-        let usr = this.usuarios[email]; // USA 'this.usuarios'
-
-        // obtener la partida cuyo código es “codigo”
+    this.unirAPartida = function (email, codigo, callback) {
+        let modelo = this;
         let partida = this.partidas[codigo];
 
-        // si existen el usuario y la partida, entonces
-        if (usr && partida) {
+        if (!partida) {
+            callback(-1);
+            return;
+        }
 
-            // Comprobar si la partida no está llena
-            if (partida.jugadores.length < partida.maxJug) {
-                // asignar al usuario a la partida
+        this.cad.buscarUsuario({ "email": email }, function (usr) {
+            if (usr && partida.jugadores.length < partida.maxJug) {
                 partida.jugadores.push(usr);
-                return codigo; // Éxito
+                callback(codigo);
+            } else {
+                callback(-1);
             }
-            // (Opcional) en caso contrario, mostrar un mensaje (partida llena)
-            else {
-                console.log("La partida está llena");
-                return -1; // Error: partida llena
-            }
-
-        }
-        // en caso contrario, mostrar un mensaje (usuario o partida no existen)
-        else {
-            console.log("Usuario o partida no encontrados");
-            return -1; // Error: no existen
-        }
+        });
     }
     //ejercicio
     this.obtenerPartidasDisponibles = function () {
@@ -190,23 +176,14 @@ Sistema.prototype.numeroUsuarios = function (callback) {
     this.cad.contarUsuarios({}, callback);
 }
 
-// AÑADIDO DESDE EL CLIENTE
-function Usuario(usr) {
-    this.nick = usr.nick;
-    this.email = usr.email;
-    this.nombre = usr.nombre;
-}
-// AÑADIDO DESDE EL CLIENTE
-function Partida(codigo) {
-    this.codigo = codigo;
-    this.jugadores = [];
-    this.maxJug = 2;
-}
-
-// AÑADIDO DESDE EL CLIENTE
-// Método para añadir usuarios en la prueba (basado en el test-modelo.html)
-Sistema.prototype.agregarUsuario = function (usr) {
-    this.usuarios[usr.email] = usr;
+this.eliminarPartida = function (codigo, email) {
+    if (this.partidas[codigo] && this.partidas[codigo].jugadores[0].email == email) {
+        delete this.partidas[codigo];
+        console.log("Partida " + codigo + " eliminada por el creador: " + email);
+        return true;
+    }
+    console.log("Intento fallido de borrar partida. Usuario no autorizado o partida inexistente.");
+    return false;
 }
 
 module.exports.Sistema = Sistema;

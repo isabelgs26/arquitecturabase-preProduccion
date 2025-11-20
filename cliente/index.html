@@ -82,8 +82,8 @@
         function ini() {
             cw = new ControlWeb();
             rest = new ClienteRest(cw);
-            cw.comprobarSesion();
             ws = new ClienteWS();
+            cw.comprobarSesion();
         }
 
         // Llamamos a ini() cuando el documento esté listo

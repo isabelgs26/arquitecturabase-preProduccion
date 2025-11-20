@@ -49,6 +49,7 @@ function ClienteRest(controlWeb) {
                 if (data.nick !== "nook" && data.nick !== -1) {
                     console.log("Usuario " + data.nick + " ha iniciado sesión");
                     $.cookie("nick", data.nick);
+                    ws.email = data.email;
                     cw.limpiar();
                     cw.mostrarHome(data.nick);
                 }
