@@ -272,16 +272,54 @@ function ControlWeb() {
         <div class="card mt-4 text-center">
             <div class="card-body">
                 <h3>⌛ Esperando rival...</h3>
-                <p>Comparte este código si es necesario, o espera a que alguien se una.</p>
+                <p class="mb-3">Compartir código con un amigo</p>
+                <div class="d-flex justify-content-center align-items-center mb-2">
+                    <h2 class="mb-0 d-flex align-items-center">
+                        <span id="codigoPartida" class="badge badge-primary" style="font-size:1.6rem; padding:0.6rem 1rem; cursor:pointer; user-select:text;" title="Selecciona o haz click para copiar" data-toggle="tooltip">` + (ws && ws.codigo ? (ws.codigo) : '') + `</span>
+                    </h2>
+                </div>
+                <p class="text-muted">o espera a que otro rival se una.</p>
                 <div class="spinner-border text-primary" role="status"></div>
                 <br><br>
-                <button class="btn btn-danger" onclick="cw.mostrarHome();">Cancelar</button>
+                <button id="btnCancelarPartida" class="btn btn-danger">Cancelar</button>
+                <div id="copiadoMsg" class="mt-3 text-success" style="display:none; font-weight:600;">Código copiado al portapapeles</div>
             </div>
         </div>`;
         $("#au").append(html);
         $("#btnCancelarPartida").on("click", function () {
             ws.cancelarPartida();
             cw.mostrarHome();
+        });
+
+        // Inicializar tooltip y copiar al hacer click o al seleccionar el código
+        try { $("#codigoPartida").tooltip(); } catch (e) { /* tooltip optional */ }
+        $("#codigoPartida").on("mouseup click", function (e) {
+            // Si hay selección (p. ej. usuario ha seleccionado el texto), usarla
+            let sel = '';
+            try { sel = window.getSelection().toString().trim(); } catch (ex) { sel = ''; }
+            const codigo = sel && sel.length > 0 ? sel : ((ws && ws.codigo) ? ws.codigo.toString().trim() : '');
+            if (!codigo) return;
+
+            // Intentar navigator.clipboard
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(codigo).then(function () {
+                    $("#copiadoMsg").show().delay(1500).fadeOut();
+                }).catch(function () {
+                    const ta = document.createElement('textarea');
+                    ta.value = codigo;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try { document.execCommand('copy'); $("#copiadoMsg").show().delay(1500).fadeOut(); } catch (e) { }
+                    document.body.removeChild(ta);
+                });
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = codigo;
+                document.body.appendChild(ta);
+                ta.select();
+                try { document.execCommand('copy'); $("#copiadoMsg").show().delay(1500).fadeOut(); } catch (e) { }
+                document.body.removeChild(ta);
+            }
         });
     };
 

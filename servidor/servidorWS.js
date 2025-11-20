@@ -46,7 +46,8 @@ function WSServer(io) {
 
                 if (borrada) {
                     let lista = sistema.obtenerPartidasDisponibles();
-                    srv.enviarATodosMenosRemitente(socket, "listaPartidas", lista);
+                    srv.enviarGlobal(io, "listaPartidas", lista);
+                    srv.enviarGlobal(io, "partidaCancelada", { "codigo": datos.codigo });
                 }
             });
         });

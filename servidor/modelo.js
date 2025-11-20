@@ -177,10 +177,16 @@ Sistema.prototype.numeroUsuarios = function (callback) {
 }
 
 this.eliminarPartida = function (codigo, email) {
-    if (this.partidas[codigo] && this.partidas[codigo].jugadores[0].email == email) {
-        delete this.partidas[codigo];
-        console.log("Partida " + codigo + " eliminada por el creador: " + email);
-        return true;
+    if (this.partidas[codigo]) {
+        const creador = this.partidas[codigo].jugadores[0] && this.partidas[codigo].jugadores[0].email;
+        const creadorNorm = (creador || "").toString().trim().toLowerCase();
+        const emailNorm = (email || "").toString().trim().toLowerCase();
+
+        if (creadorNorm === emailNorm) {
+            delete this.partidas[codigo];
+            console.log("Partida " + codigo + " eliminada por el creador: " + email);
+            return true;
+        }
     }
     console.log("Intento fallido de borrar partida. Usuario no autorizado o partida inexistente.");
     return false;

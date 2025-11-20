@@ -27,6 +27,11 @@ function ClienteWS() {
             console.log("Lista de partidas actualizada:", lista);
             cw.mostrarListaPartidas(lista);
         });
+
+        this.socket.on("partidaCancelada", function () {
+            console.log("Tu partida ha sido cancelada");
+            cw.mostrarHome();
+        });
     }
 
     this.crearPartida = function () {
