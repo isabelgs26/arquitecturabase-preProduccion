@@ -11,15 +11,15 @@ function Partida(codigo) {
 function Sistema(objConfig = {}) {
     this.cad = new datos.CAD();
     this.test = objConfig.test || false;
-    this.partidas = {}
+    this.partidas = {};
     this.usuarios = {};
+
     this.obtenerCodigo = function () {
         return (new Date()).getTime().toString().substr(-6);
     }
 
     this.crearPartida = function (email, callback) {
         let modelo = this;
-
         // 1. Buscamos al usuario en la BD
         this.cad.buscarUsuario({ "email": email }, function (usr) {
             if (usr) {
@@ -33,6 +33,7 @@ function Sistema(objConfig = {}) {
             }
         });
     }
+
     this.unirAPartida = function (email, codigo, callback) {
         let modelo = this;
         let partida = this.partidas[codigo];
@@ -51,31 +52,27 @@ function Sistema(objConfig = {}) {
             }
         });
     }
-    //ejercicio
+
     this.obtenerPartidasDisponibles = function () {
         let lista = [];
         for (var e in this.partidas) {
             let partida = this.partidas[e];
-
             // comprobar si la partida está disponible (no está llena)
             if (partida.jugadores.length < partida.maxJug) {
-
                 // obtener el email del creador de la partida (el primer jugador)
                 let creadorEmail = partida.jugadores[0].email;
-
                 // obtener el código de la partida
-                let codigoPartida = partida.codigo; // o simplemente 'e'
+                let codigoPartida = partida.codigo;
 
-                // crear un objeto JSON con esos dos datos
                 let obj = { "codigo": codigoPartida, "creador": creadorEmail };
-
-                // meter el objeto JSON en el array lista
                 lista.push(obj);
             }
         }
         return lista;
     };
 }
+
+// --- MÉTODOS DEL PROTOTIPO ---
 
 Sistema.prototype.inicializar = async function () {
     if (!this.test) {
@@ -107,7 +104,6 @@ Sistema.prototype.registrarUsuario = function (obj, callback) {
                     return callback({ "email": -1 });
                 }
                 obj.password = hash;
-
                 obj.key = Date.now().toString();
                 obj.confirmada = false;
 
@@ -129,12 +125,10 @@ Sistema.prototype.confirmarUsuario = function (obj, callback) {
     this.cad.buscarUsuario({ "email": obj.email, "confirmada": false, "key": obj.key }, function (usr) {
         if (usr) {
             usr.confirmada = true;
-
             modelo.cad.actualizarUsuario(usr, function (res) {
                 callback({ "email": res.email });
             });
-        }
-        else {
+        } else {
             callback({ "email": -1 });
         }
     });
@@ -145,7 +139,6 @@ Sistema.prototype.loginUsuario = function (obj, callback) {
         if (!usr) {
             return callback({ "email": -1 });
         }
-
         bcrypt.compare(obj.password, usr.password, function (err, ok) {
             if (ok) {
                 callback(usr);
@@ -176,7 +169,8 @@ Sistema.prototype.numeroUsuarios = function (callback) {
     this.cad.contarUsuarios({}, callback);
 }
 
-this.eliminarPartida = function (codigo, email) {
+// CORRECCIÓN AQUÍ: Usamos Sistema.prototype en lugar de 'this' suelto
+Sistema.prototype.eliminarPartida = function (codigo, email) {
     if (this.partidas[codigo]) {
         const creador = this.partidas[codigo].jugadores[0] && this.partidas[codigo].jugadores[0].email;
         const creadorNorm = (creador || "").toString().trim().toLowerCase();
