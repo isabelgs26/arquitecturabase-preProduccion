@@ -70,6 +70,9 @@ function Sistema(objConfig = {}) {
         }
         return lista;
     };
+    this.obtenerLogs = function (callback) {
+        this.cad.obtenerLogs(callback);
+    }
 }
 
 // --- MÉTODOS DEL PROTOTIPO ---

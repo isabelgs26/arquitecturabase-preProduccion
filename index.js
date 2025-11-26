@@ -190,9 +190,14 @@ app.get("/eliminarUsuario/:email", haIniciado, function (req, res) {
         res.json(resultado);
     });
 });
+app.get("/obtenerLogs", function (request, response) {
+    sistema.obtenerLogs(function (logs) {
+        response.json(logs);
+    });
+});
 
 sistema.inicializar().then(() => {
-    console.log("Sistema inicializado con base de datos");
+    console.log("--- SISTEMA OK: Base de Datos y Logs listos ---");
     httpServer.listen(PORT, () => {
         console.log(`App está escuchando en el puerto ${PORT}`);
         console.log('Ctrl+C para salir');

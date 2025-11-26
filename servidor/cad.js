@@ -2,7 +2,9 @@ function CAD() {
     const mongo = require("mongodb").MongoClient;
     const ObjectId = require("mongodb").ObjectId;
     const gv = require('./gestorVariables.js');
+
     this.usuarios = null;
+    this.logs = null; // 1. Añadimos la propiedad logs
 
     this.conectar = async function () {
         let cad = this;
@@ -20,6 +22,8 @@ function CAD() {
             await client.connect();
             const database = client.db("sistema");
             cad.usuarios = database.collection("usuarios");
+            // 2. Conectamos con la colección 'logs'
+            cad.logs = database.collection("logs");
         } catch (err) {
             console.error("Error al conectar a MongoDB (cad.js):", err);
             throw new Error("No se pudo conectar a la base de datos");
@@ -33,7 +37,6 @@ function CAD() {
     this.actualizarUsuario = function (obj, callback) {
         actualizar(this.usuarios, obj, callback);
     }
-
 
     this.buscarUsuario = function (criterio, callback) {
         buscar(this.usuarios, criterio, callback);
@@ -54,6 +57,23 @@ function CAD() {
     this.contarUsuarios = function (criterio, callback) {
         contar(this.usuarios, criterio, callback);
     }
+
+    // 3. Nueva función pública para insertar logs
+    this.insertarLog = function (registro, callback) {
+        insertar(this.logs, registro, callback);
+    }
+
+    this.obtenerLogs = function (callback) {
+        if (!this.logs) return callback([]);
+        this.logs.find({}).toArray(function (err, result) {
+            if (err) {
+                console.error("Error al obtener logs");
+                return callback([]);
+            }
+            callback(result);
+        });
+    }
+    // --- FUNCIONES PRIVADAS ---
 
     function buscarOCrear(coleccion, criterio, callback) {
         const query = { email: criterio.email };
@@ -116,14 +136,17 @@ function CAD() {
     }
 
     function insertar(coleccion, elemento, callback) {
-        if (!coleccion) { return callback(new Error("ColeScción no inicializada")); }
+        // Corrección de errata en el log original "ColeScción"
+        if (!coleccion) { return callback(new Error("Colección no inicializada")); }
         coleccion.insertOne(elemento, function (err, result) {
             if (err) {
                 console.error("Error en 'insertar' (cad.js):", err);
-                return callback(null);
+                // Si hay callback, lo llamamos con null o error
+                if (callback) return callback(null);
+                else return;
             }
             console.log("Nuevo elemento creado");
-            callback(elemento);
+            if (callback) callback(elemento);
         });
     }
 

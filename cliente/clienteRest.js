@@ -24,8 +24,7 @@ function ClienteRest(controlWeb) {
                 if (data.nick != -1) {
                     console.log("Usuario " + data.nick + " ha sido registrado");
                     cw.limpiar();
-                    cw.mostrarModal("Usuario registrado con éxito. Inicia sesión para acceder al sistema.", "exito");
-                    cw.mostrarAcceso();
+                    cw.mostrarModal("Usuario registrado con éxito, entra a tu correo electrónico y verifica tu cuenta", "exito"); cw.mostrarAcceso();
                 } else {
                     console.log("No se pudo registrar el usuario");
                     cw.mostrarModal("Error: El usuario (email) ya existe", "error");
@@ -49,7 +48,8 @@ function ClienteRest(controlWeb) {
                 if (data.nick !== "nook" && data.nick !== -1) {
                     console.log("Usuario " + data.nick + " ha iniciado sesión");
                     $.cookie("nick", data.nick);
-                    ws.email = data.email;
+                    ws.email = email;
+                    $.cookie("email", email);
                     cw.limpiar();
                     cw.mostrarHome(data.nick);
                 }
