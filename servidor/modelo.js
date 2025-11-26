@@ -27,6 +27,11 @@ function Sistema(objConfig = {}) {
                 let partida = new Partida(codigo);
                 partida.jugadores.push(usr);
                 modelo.partidas[codigo] = partida;
+                modelo.cad.insertarLog({
+                    "tipo-operacion": "crearPartida",
+                    "usuario": email,
+                    "fecha-hora": new Date()
+                }, () => { });
                 callback(codigo); // Devolvemos el código
             } else {
                 callback(-1); // Usuario no encontrado
@@ -46,6 +51,11 @@ function Sistema(objConfig = {}) {
         this.cad.buscarUsuario({ "email": email }, function (usr) {
             if (usr && partida.jugadores.length < partida.maxJug) {
                 partida.jugadores.push(usr);
+                modelo.cad.insertarLog({
+                    "tipo-operacion": "unirAPartida",
+                    "usuario": email,
+                    "fecha-hora": new Date()
+                }, () => { });
                 callback(codigo);
             } else {
                 callback(-1);
@@ -86,7 +96,17 @@ Sistema.prototype.inicializar = async function () {
 }
 
 Sistema.prototype.usuarioGoogle = function (usr, callback) {
-    this.cad.buscarOCrearUsuario(usr, callback);
+    let modelo = this;
+    this.cad.buscarOCrearUsuario(usr, function (resultado) {
+        modelo.cad.insertarLog({
+            "tipo-operacion": "inicioGoogle",
+            "usuario": usr.email,
+            "fecha-hora": new Date()
+        }, () => { });
+
+        callback(resultado);
+    });
+
 }
 
 Sistema.prototype.obtenerUsuarios = function (callback) {
@@ -116,6 +136,11 @@ Sistema.prototype.registrarUsuario = function (obj, callback) {
                     }
                     callback(res);
                 });
+                modelo.cad.insertarLog({
+                    "tipo-operacion": "registroUsuario",
+                    "usuario": obj.email,
+                    "fecha-hora": new Date()
+                }, () => { });
             });
         } else {
             callback({ "email": -1 });
@@ -136,14 +161,23 @@ Sistema.prototype.confirmarUsuario = function (obj, callback) {
         }
     });
 };
-
 Sistema.prototype.loginUsuario = function (obj, callback) {
+    let modelo = this;
+
     this.cad.buscarUsuario({ email: obj.email, confirmada: true }, function (usr) {
         if (!usr) {
             return callback({ "email": -1 });
         }
+
         bcrypt.compare(obj.password, usr.password, function (err, ok) {
             if (ok) {
+
+                modelo.cad.insertarLog({
+                    "tipo-operacion": "inicioLocal",
+                    "usuario": usr.email,
+                    "fecha-hora": new Date()
+                }, () => { });
+
                 callback(usr);
             } else {
                 callback({ "email": -1 });
@@ -151,6 +185,7 @@ Sistema.prototype.loginUsuario = function (obj, callback) {
         });
     });
 };
+
 
 Sistema.prototype.usuarioActivo = function (email, callback) {
     this.cad.buscarUsuario({ email: email }, function (usr) {
@@ -172,7 +207,6 @@ Sistema.prototype.numeroUsuarios = function (callback) {
     this.cad.contarUsuarios({}, callback);
 }
 
-// CORRECCIÓN AQUÍ: Usamos Sistema.prototype en lugar de 'this' suelto
 Sistema.prototype.eliminarPartida = function (codigo, email) {
     if (this.partidas[codigo]) {
         const creador = this.partidas[codigo].jugadores[0] && this.partidas[codigo].jugadores[0].email;
@@ -181,6 +215,11 @@ Sistema.prototype.eliminarPartida = function (codigo, email) {
 
         if (creadorNorm === emailNorm) {
             delete this.partidas[codigo];
+            this.cad.insertarLog({
+                "tipo-operacion": "eliminarPartida",
+                "usuario": email,
+                "fecha-hora": new Date()
+            }, () => { });
             console.log("Partida " + codigo + " eliminada por el creador: " + email);
             return true;
         }

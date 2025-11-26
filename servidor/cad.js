@@ -4,8 +4,7 @@ function CAD() {
     const gv = require('./gestorVariables.js');
 
     this.usuarios = null;
-    this.logs = null; // 1. Añadimos la propiedad logs
-
+    this.logs = null;
     this.conectar = async function () {
         let cad = this;
 
@@ -13,7 +12,7 @@ function CAD() {
 
         if (!mongoUrl) {
             console.error("Error: MONGODB_URI no se pudo cargar desde Secret Manager.");
-            throw new Error("No se pudo cargar la cadena de conexión de MongoDB");
+            throw new Error("No se pudo conectar a la base de datos");
         }
 
         let client = new mongo(mongoUrl, { useUnifiedTopology: true });
@@ -22,8 +21,8 @@ function CAD() {
             await client.connect();
             const database = client.db("sistema");
             cad.usuarios = database.collection("usuarios");
-            // 2. Conectamos con la colección 'logs'
             cad.logs = database.collection("logs");
+            console.log("✅ Conexión a MongoDB establecida (Usuarios y Logs listos).");
         } catch (err) {
             console.error("Error al conectar a MongoDB (cad.js):", err);
             throw new Error("No se pudo conectar a la base de datos");
@@ -58,7 +57,6 @@ function CAD() {
         contar(this.usuarios, criterio, callback);
     }
 
-    // 3. Nueva función pública para insertar logs
     this.insertarLog = function (registro, callback) {
         insertar(this.logs, registro, callback);
     }
@@ -67,12 +65,13 @@ function CAD() {
         if (!this.logs) return callback([]);
         this.logs.find({}).toArray(function (err, result) {
             if (err) {
-                console.error("Error al obtener logs");
+                console.error("Error al obtener logs:", err);
                 return callback([]);
             }
             callback(result);
         });
     }
+
     // --- FUNCIONES PRIVADAS ---
 
     function buscarOCrear(coleccion, criterio, callback) {
@@ -136,7 +135,6 @@ function CAD() {
     }
 
     function insertar(coleccion, elemento, callback) {
-        // Corrección de errata en el log original "ColeScción"
         if (!coleccion) { return callback(new Error("Colección no inicializada")); }
         coleccion.insertOne(elemento, function (err, result) {
             if (err) {
