@@ -5,6 +5,8 @@ function CAD() {
 
     this.usuarios = null;
     this.logs = null;
+    this.partidas = null;
+
     this.conectar = async function () {
         let cad = this;
 
@@ -22,7 +24,11 @@ function CAD() {
             const database = client.db("sistema");
             cad.usuarios = database.collection("usuarios");
             cad.logs = database.collection("logs");
-            console.log("✅ Conexión a MongoDB establecida (Usuarios y Logs listos).");
+            cad.partidas = database.collection("partidas");
+
+            console.log("Conexión a MongoDB establecida (Usuarios y Logs listos).");
+
+
         } catch (err) {
             console.error("Error al conectar a MongoDB (cad.js):", err);
             throw new Error("No se pudo conectar a la base de datos");
@@ -71,6 +77,49 @@ function CAD() {
             callback(result);
         });
     }
+
+    this.insertarPartida = function (partida, callback) {
+        insertar(this.partidas, partida, callback);
+    }
+
+    this.obtenerPartida = function (codigo, callback) {
+        buscar(this.partidas, { codigo: codigo }, callback);
+    }
+
+    this.eliminarPartida = function (codigo, callback) {
+        eliminarUno(this.partidas, { codigo: codigo }, callback);
+    }
+
+    this.actualizarPartida = function (codigo, actualizacion, callback) {
+        this.partidas.findOneAndUpdate(
+            { codigo: codigo },
+            { $set: actualizacion },
+            { returnDocument: "after" },
+            function (err, doc) {
+                if (err) {
+                    console.error("Error actualizando partida:", err);
+                    return callback(null);
+                }
+                callback(doc.value);
+            }
+        );
+    }
+
+
+    this.obtenerPartidasDisponibles = function (callback) {
+        if (!this.partidas) return callback([]);
+
+        this.partidas.find({
+            $expr: { $lt: [{ $size: "$jugadores" }, "$maxJug"] }
+        }).toArray(function (err, result) {
+            if (err) {
+                console.error("Error al obtener partidas disponibles:", err);
+                return callback([]);
+            }
+            callback(result);
+        });
+    }
+
 
     // --- FUNCIONES PRIVADAS ---
 

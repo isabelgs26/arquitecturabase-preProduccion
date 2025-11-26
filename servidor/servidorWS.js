@@ -5,7 +5,6 @@ function WSServer(io) {
         io.on('connection', function (socket) {
             console.log("Capa WS activa");
 
-            // --- Listener: Crear Partida ---
             socket.on("crearPartida", function (datos) {
                 console.log("Servidor ha recibido 'crearPartida' con datos:", datos);
 
@@ -15,8 +14,9 @@ function WSServer(io) {
                     if (codigo != -1) {
                         socket.join(codigo);
                         srv.enviarAlRemitente(socket, "partidaCreada", { "codigo": codigo });
-                        let lista = sistema.obtenerPartidasDisponibles();
-                        srv.enviarATodosMenosRemitente(socket, "listaPartidas", lista);
+                        sistema.obtenerPartidasDisponibles(function (lista) {
+                            srv.enviarATodosMenosRemitente(socket, "listaPartidas", lista);
+                        });
                     } else {
                         console.log("No se pudo crear la partida (código -1).");
                     }
@@ -24,31 +24,26 @@ function WSServer(io) {
             });
 
             socket.on("unirAPartida", function (datos) {
-                // pedir a sistema unir a partida
                 sistema.unirAPartida(datos.email, datos.codigo, function (codigo) {
-
-                    // unirse al socket si el código no es -1
                     if (codigo != -1) {
                         socket.join(codigo);
-
-                        // enviar al remitente “unidoAPartida” y el código
                         srv.enviarAlRemitente(socket, "unidoAPartida", { "codigo": codigo });
-
-                        // enviar al resto la lista de partidas actualizada
-                        let lista = sistema.obtenerPartidasDisponibles();
-                        srv.enviarATodosMenosRemitente(socket, "listaPartidas", lista);
+                        sistema.obtenerPartidasDisponibles(function (lista) {
+                            srv.enviarATodosMenosRemitente(socket, "listaPartidas", lista);
+                        });
                     }
                 });
             });
 
             socket.on("cancelarPartida", function (datos) {
-                let borrada = sistema.eliminarPartida(datos.codigo, datos.email);
-
-                if (borrada) {
-                    let lista = sistema.obtenerPartidasDisponibles();
-                    srv.enviarGlobal(io, "listaPartidas", lista);
-                    srv.enviarGlobal(io, "partidaCancelada", { "codigo": datos.codigo });
-                }
+                sistema.eliminarPartida(datos.codigo, datos.email, function (borrada) {
+                    if (borrada) {
+                        sistema.obtenerPartidasDisponibles(function (lista) {
+                            srv.enviarGlobal(io, "listaPartidas", lista);
+                            srv.enviarGlobal(io, "partidaCancelada", { "codigo": datos.codigo });
+                        });
+                    }
+                });
             });
         });
     }
@@ -63,4 +58,5 @@ function WSServer(io) {
         io.emit(mens, datos);
     }
 }
+
 module.exports.WSServer = WSServer;

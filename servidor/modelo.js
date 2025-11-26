@@ -20,65 +20,91 @@ function Sistema(objConfig = {}) {
 
     this.crearPartida = function (email, callback) {
         let modelo = this;
-        // 1. Buscamos al usuario en la BD
         this.cad.buscarUsuario({ "email": email }, function (usr) {
             if (usr) {
                 let codigo = modelo.obtenerCodigo();
-                let partida = new Partida(codigo);
-                partida.jugadores.push(usr);
-                modelo.partidas[codigo] = partida;
-                modelo.cad.insertarLog({
-                    "tipo-operacion": "crearPartida",
-                    "usuario": email,
-                    "fecha-hora": new Date()
-                }, () => { });
-                callback(codigo); // Devolvemos el código
-            } else {
-                callback(-1); // Usuario no encontrado
-            }
-        });
-    }
+                let partida = {
+                    codigo: codigo,
+                    jugadores: [usr],
+                    maxJug: 2,
+                    creador: email,
+                    fechaCreacion: new Date()
+                };
+                modelo.cad.insertarPartida(partida, function (resultado) {
+                    if (resultado) {
+                        modelo.cad.insertarLog({
+                            "tipo-operacion": "crearPartida",
+                            "usuario": email,
+                            "fecha-hora": new Date()
+                        }, () => { });
+                        callback(codigo);
+                    } else {
+                        callback(-1);
+                    }
+                });
 
-    this.unirAPartida = function (email, codigo, callback) {
-        let modelo = this;
-        let partida = this.partidas[codigo];
-
-        if (!partida) {
-            callback(-1);
-            return;
-        }
-
-        this.cad.buscarUsuario({ "email": email }, function (usr) {
-            if (usr && partida.jugadores.length < partida.maxJug) {
-                partida.jugadores.push(usr);
-                modelo.cad.insertarLog({
-                    "tipo-operacion": "unirAPartida",
-                    "usuario": email,
-                    "fecha-hora": new Date()
-                }, () => { });
-                callback(codigo);
             } else {
                 callback(-1);
             }
         });
+
     }
 
-    this.obtenerPartidasDisponibles = function () {
-        let lista = [];
-        for (var e in this.partidas) {
-            let partida = this.partidas[e];
-            // comprobar si la partida está disponible (no está llena)
-            if (partida.jugadores.length < partida.maxJug) {
-                // obtener el email del creador de la partida (el primer jugador)
-                let creadorEmail = partida.jugadores[0].email;
-                // obtener el código de la partida
-                let codigoPartida = partida.codigo;
 
-                let obj = { "codigo": codigoPartida, "creador": creadorEmail };
-                lista.push(obj);
+
+    this.unirAPartida = function (email, codigo, callback) {
+        let modelo = this;
+
+        this.cad.obtenerPartida(codigo, function (partidaBD) {
+            if (!partidaBD) {
+                callback(-1);
+                return;
             }
-        }
-        return lista;
+
+            if (partidaBD.jugadores.length >= partidaBD.maxJug) {
+                callback(-1);
+                return;
+            }
+
+            modelo.cad.buscarUsuario({ "email": email }, function (usr) {
+                if (!usr) {
+                    callback(-1);
+                    return;
+                }
+
+                partidaBD.jugadores.push(usr);
+                modelo.cad.actualizarPartida(codigo, { jugadores: partidaBD.jugadores }, function (updated) {
+                    if (updated) {
+                        modelo.cad.insertarLog({
+                            "tipo-operacion": "unirAPartida",
+                            "usuario": email,
+                            "fecha-hora": new Date()
+                        }, () => { });
+                        callback(codigo);
+                    } else {
+                        callback(-1);
+                    }
+                });
+            });
+        });
+    }
+
+    this.obtenerPartidasDisponibles = function (callback) {
+        let modelo = this;
+
+        this.cad.obtenerPartidasDisponibles(function (partidasBD) {
+            let lista = [];
+            partidasBD.forEach(function (partida) {
+                let obj = {
+                    "codigo": partida.codigo,
+                    "creador": partida.creador,
+                    "jugadoresActuales": partida.jugadores.length,
+                    "maxJugadores": partida.maxJug
+                };
+                lista.push(obj);
+            });
+            callback(lista);
+        });
     };
     this.obtenerLogs = function (callback) {
         this.cad.obtenerLogs(callback);
@@ -207,25 +233,38 @@ Sistema.prototype.numeroUsuarios = function (callback) {
     this.cad.contarUsuarios({}, callback);
 }
 
-Sistema.prototype.eliminarPartida = function (codigo, email) {
-    if (this.partidas[codigo]) {
-        const creador = this.partidas[codigo].jugadores[0] && this.partidas[codigo].jugadores[0].email;
-        const creadorNorm = (creador || "").toString().trim().toLowerCase();
+Sistema.prototype.eliminarPartida = function (codigo, email, callback) {
+    let modelo = this;
+
+    this.cad.obtenerPartida(codigo, function (partida) {
+        if (!partida) {
+            console.log("Intento fallido de borrar partida. Partida inexistente.");
+            if (callback) callback(false);
+            return false;
+        }
+
+        const creadorNorm = (partida.creador || "").toString().trim().toLowerCase();
         const emailNorm = (email || "").toString().trim().toLowerCase();
 
         if (creadorNorm === emailNorm) {
-            delete this.partidas[codigo];
-            this.cad.insertarLog({
-                "tipo-operacion": "eliminarPartida",
-                "usuario": email,
-                "fecha-hora": new Date()
-            }, () => { });
-            console.log("Partida " + codigo + " eliminada por el creador: " + email);
-            return true;
+            modelo.cad.eliminarPartida(codigo, function (resultado) {
+                if (resultado && resultado.eliminado > 0) {
+                    modelo.cad.insertarLog({
+                        "tipo-operacion": "eliminarPartida",
+                        "usuario": email,
+                        "fecha-hora": new Date()
+                    }, () => { });
+                    console.log("Partida " + codigo + " eliminada por el creador: " + email);
+                    if (callback) callback(true);
+                } else {
+                    if (callback) callback(false);
+                }
+            });
+        } else {
+            console.log("Intento fallido de borrar partida. Usuario no autorizado.");
+            if (callback) callback(false);
         }
-    }
-    console.log("Intento fallido de borrar partida. Usuario no autorizado o partida inexistente.");
-    return false;
+    });
 }
 
 module.exports.Sistema = Sistema;
