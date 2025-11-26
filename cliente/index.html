@@ -7,6 +7,232 @@
     <title>Cliente</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <style>
+        body {
+            background-image: url('./img/fondo.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Navbar moderna y transparente */
+        .navbar {
+            background: rgba(15, 23, 42, 0.9) !important;
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px 0;
+        }
+
+        .navbar-brand,
+        .nav-link {
+            color: #e2e8f0 !important;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: #60a5fa !important;
+        }
+
+        /* Contenedor principal */
+        .container {
+            margin-top: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Formulario grande y atractivo */
+        .card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 600px;
+            padding: 40px;
+            color: white;
+        }
+
+        .card h5 {
+            color: #f8fafc;
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Campos de formulario grandes */
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            color: #cbd5e1;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .form-control {
+            background: rgba(30, 41, 59, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 1.1rem;
+            padding: 15px 20px;
+            height: auto;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+            color: white;
+        }
+
+        .form-control::placeholder {
+            color: #94a3b8;
+        }
+
+        /* Botones grandes y modernos */
+        .btn {
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 15px 30px;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #2563eb, #7c3aed);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6);
+        }
+
+        .btn-outline-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .btn-outline-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Separador */
+        hr {
+            border-color: rgba(255, 255, 255, 0.2);
+            margin: 30px 0;
+        }
+
+        /* Texto centrado */
+        .text-center p {
+            color: #cbd5e1;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        /* Logo de Google */
+        a[href="/auth/google"] img {
+            border-radius: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        a[href="/auth/google"] img:hover {
+            transform: scale(1.05);
+        }
+
+        /* Título principal */
+        h3.text-white {
+            color: #f8fafc !important;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            text-align: center;
+            background: linear-gradient(45deg, #60a5fa, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Mensajes de alerta */
+        .alert {
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+        }
+
+        /* Estilos para la lista de partidas */
+        .list-group-item {
+            background: rgba(30, 41, 59, 0.9) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: white !important;
+            backdrop-filter: blur(10px);
+            margin-bottom: 10px;
+            border-radius: 10px !important;
+        }
+
+        .list-group-item:hover {
+            background: rgba(51, 65, 85, 0.9) !important;
+            border-color: rgba(96, 165, 250, 0.5) !important;
+        }
+
+        /* Botones dentro de la lista */
+        .list-group-item .btn {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            border: none;
+            color: white;
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-size: 0.9rem;
+        }
+
+        .list-group-item .btn:hover {
+            background: linear-gradient(45deg, #2563eb, #7c3aed);
+            transform: translateY(-1px);
+        }
+
+        /* Contenedor de partidas */
+        #zonaPartidas .card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            color: white;
+        }
+
+        #zonaPartidas .card-body {
+            background: transparent !important;
+        }
+
+        #zonaPartidas h5,
+        #zonaPartidas h6 {
+            color: #f8fafc;
+            font-weight: 600;
+        }
+    </style>
 </head>
 
 <body>
@@ -36,7 +262,7 @@
     </nav>
 
     <div class="container">
-        <h3>Sistema</h3>
+
         <div id="au"></div>
         <div id="msg"></div>
     </div>

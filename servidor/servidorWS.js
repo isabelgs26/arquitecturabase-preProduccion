@@ -28,6 +28,17 @@ function WSServer(io) {
                     if (codigo != -1) {
                         socket.join(codigo);
                         srv.enviarAlRemitente(socket, "unidoAPartida", { "codigo": codigo });
+
+                        sistema.obtenerEstadisticasPartida(codigo, function (partida) {
+                            if (partida) {
+                                srv.enviarGlobal(io, "estadoPartidaActualizado", {
+                                    "codigo": codigo,
+                                    "estado": partida.estado,
+                                    "jugadores": partida.jugadores
+                                });
+                            }
+                        });
+
                         sistema.obtenerPartidasDisponibles(function (lista) {
                             srv.enviarATodosMenosRemitente(socket, "listaPartidas", lista);
                         });
@@ -41,6 +52,20 @@ function WSServer(io) {
                         sistema.obtenerPartidasDisponibles(function (lista) {
                             srv.enviarGlobal(io, "listaPartidas", lista);
                             srv.enviarGlobal(io, "partidaCancelada", { "codigo": datos.codigo });
+                        });
+                    }
+                });
+            });
+
+            socket.on("iniciarJuego", function (datos) {
+                sistema.iniciarJuego(datos.codigo, datos.email, function (resultado) {
+                    if (resultado === 1) {
+                        srv.enviarGlobal(io, "juegoIniciado", {
+                            "codigo": datos.codigo
+                        });
+                    } else {
+                        srv.enviarAlRemitente(socket, "errorIniciarJuego", {
+                            "razon": resultado
                         });
                     }
                 });

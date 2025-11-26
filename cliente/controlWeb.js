@@ -114,6 +114,45 @@ function ControlWeb() {
 
     };
 
+    this.mostrarEsperandoInicio = function (codigo, esCreador) {
+        this.limpiar();
+
+        let html = `
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3>✅ Partida Completa</h3>
+                            <p>¡Ambos jugadores están conectados!</p>
+                            <p><strong>Código:</strong> ${codigo}</p>
+                            
+                            ${esCreador ?
+                '<button id="btnIniciarJuego" class="btn btn-success btn-lg">🎮 Iniciar Juego</button>' :
+                '<div class="alert alert-info">⏳ Esperando que el creador inicie el juego...</div>'
+            }
+                            
+                            <button id="btnCancelarPartida" class="btn btn-secondary mt-3">Cancelar Partida</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+        $("#au").html(html);
+
+        if (esCreador) {
+            $("#btnIniciarJuego").click(function () {
+                ws.iniciarJuego(codigo);
+            });
+        }
+
+        $("#btnCancelarPartida").click(function () {
+            ws.cancelarPartida(codigo);
+        });
+    }
+
     this.salir = function () {
         $.removeCookie("nick");
         location.reload();
@@ -342,4 +381,5 @@ function ControlWeb() {
             listaDiv.html(ul);
         }
     };
+
 }

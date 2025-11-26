@@ -13,7 +13,7 @@ function ClienteWS() {
 
         this.socket.on("partidaCreada", function (datos) {
             console.log("Partida creada con código:", datos.codigo);
-            cli.codigo = datos.codigo; // Guardamos el código
+            cli.codigo = datos.codigo;
             cw.mostrarEsperandoRival();
         });
 
@@ -32,6 +32,25 @@ function ClienteWS() {
             console.log("Tu partida ha sido cancelada");
             cw.mostrarHome();
         });
+
+        this.socket.on("juegoIniciado", function (datos) {
+            console.log("¡Juego iniciado!", datos);
+            cw.mostrarPantallaJuego(datos.codigo);
+        });
+
+        this.socket.on("errorIniciarJuego", function (datos) {
+            console.log("Error al iniciar juego:", datos.razon);
+            cw.mostrarError("No se pudo iniciar el juego");
+        });
+
+        this.socket.on("estadoPartidaActualizado", function (datos) {
+            console.log("Estado de partida actualizado:", datos.estado);
+
+            if (datos.estado === "completa") {
+                let esCreador = (datos.jugadores[0] === cli.email);
+                cw.mostrarEsperandoInicio(datos.codigo, esCreador);
+            }
+        });
     }
 
     this.crearPartida = function () {
@@ -43,14 +62,14 @@ function ClienteWS() {
             "email": this.email, "codigo": codigo
         });
     }
+
     this.cancelarPartida = function () {
         if (this.codigo) {
             this.socket.emit("cancelarPartida", { "email": this.email, "codigo": this.codigo });
             console.log("Petición de cancelación enviada.");
             this.codigo = undefined;
         }
-
     }
-    this.ini();
 
+    this.ini();
 }

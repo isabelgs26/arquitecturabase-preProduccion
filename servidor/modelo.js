@@ -28,7 +28,9 @@ function Sistema(objConfig = {}) {
                     jugadores: [usr],
                     maxJug: 2,
                     creador: email,
-                    fechaCreacion: new Date()
+                    fechaCreacion: new Date(),
+                    estado: "incompleta", // "incompleta", "en juego", "finalizada"
+                    puntuaciones: {}
                 };
                 modelo.cad.insertarPartida(partida, function (resultado) {
                     if (resultado) {
@@ -73,7 +75,19 @@ function Sistema(objConfig = {}) {
                 }
 
                 partidaBD.jugadores.push(usr);
-                modelo.cad.actualizarPartida(codigo, { jugadores: partidaBD.jugadores }, function (updated) {
+
+                let actualizacion = {
+                    jugadores: partidaBD.jugadores
+                };
+
+                if (partidaBD.jugadores.length === partidaBD.maxJug) {
+                    actualizacion.estado = "completa";
+                    actualizacion.puntuaciones = {};
+                    partidaBD.jugadores.forEach(jugador => {
+                        actualizacion.puntuaciones[jugador.email] = 0;
+                    });
+                }
+                modelo.cad.actualizarPartida(codigo, actualizacion, function (updated) {
                     if (updated) {
                         modelo.cad.insertarLog({
                             "tipo-operacion": "unirAPartida",
@@ -109,6 +123,118 @@ function Sistema(objConfig = {}) {
     this.obtenerLogs = function (callback) {
         this.cad.obtenerLogs(callback);
     }
+
+    // Método para actualizar puntuación
+    this.actualizarPuntuacion = function (codigo, email, puntos, callback) {
+        let modelo = this;
+
+        this.cad.obtenerPartida(codigo, function (partida) {
+            if (!partida || partida.estado !== "en juego") {
+                callback(-1);
+                return;
+            }
+
+            let actualizacion = {
+                [`puntuaciones.${email}`]: puntos
+            };
+
+            modelo.cad.actualizarPartida(codigo, actualizacion, function (updated) {
+                if (updated) {
+                    callback(1);
+                } else {
+                    callback(-1);
+                }
+            });
+        });
+    }
+
+    // Método para finalizar partida
+    this.finalizarPartida = function (codigo, callback) {
+        let modelo = this;
+
+        let actualizacion = {
+            estado: "finalizada",
+            fechaFin: new Date()
+        };
+
+        modelo.cad.actualizarPartida(codigo, actualizacion, function (updated) {
+            if (updated) {
+                modelo.cad.insertarLog({
+                    "tipo-operacion": "finalizarPartida",
+                    "usuario": "sistema",
+                    "fecha-hora": new Date()
+                }, () => { });
+                callback(1);
+            } else {
+                callback(-1);
+            }
+        });
+    }
+
+    // Método para obtener estadísticas de partida
+    this.obtenerEstadisticasPartida = function (codigo, callback) {
+        this.cad.obtenerPartida(codigo, function (partida) {
+            if (!partida) {
+                callback(null);
+                return;
+            }
+
+            let estadisticas = {
+                codigo: partida.codigo,
+                estado: partida.estado,
+                creador: partida.creador,
+                jugadores: partida.jugadores.map(j => j.email),
+                puntuaciones: partida.puntuaciones || {},
+                fechaCreacion: partida.fechaCreacion,
+                fechaFin: partida.fechaFin
+            };
+
+            callback(estadisticas);
+        });
+    }
+
+    this.iniciarJuego = function (codigo, email, callback) {
+        let modelo = this;
+
+        this.cad.obtenerPartida(codigo, function (partida) {
+            if (!partida) {
+                callback(-1);
+                return;
+            }
+
+            if (partida.creador !== email) {
+                callback(-2);
+                return;
+            }
+
+            if (partida.estado !== "completa") {
+                callback(-3);
+                return;
+            }
+
+            let actualizacion = {
+                estado: "en juego",
+                fechaInicio: new Date()
+            };
+
+            modelo.cad.actualizarPartida(codigo, actualizacion, function (updated) {
+                if (updated) {
+                    modelo.cad.insertarLog({
+                        "tipo-operacion": "iniciarJuego",
+                        "usuario": email,
+                        "fecha-hora": new Date()
+                    }, () => { });
+                    callback(1);
+                } else {
+                    callback(-4);
+                }
+            });
+        });
+    }
+
+
+
+
 }
 
 // --- MÉTODOS DEL PROTOTIPO ---
