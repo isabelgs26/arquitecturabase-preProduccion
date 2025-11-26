@@ -4,12 +4,19 @@ const gestor = require('./gestorVariables');
 const url = "http://localhost:3000/";
 
 let transporter;
-
+let options = {
+    user: "",
+    pass: ""
+};
 exports.inicializarTransporter = async function () {
     if (transporter) return;
 
     try {
-        const options = await gestor.obtenerOptions();
+        const options = await new Promise((resolve) => {
+            gestor.obtenerOptions(function (opt) {
+                resolve(opt);
+            });
+        });
 
         transporter = nodemailer.createTransport({
             service: 'gmail',
