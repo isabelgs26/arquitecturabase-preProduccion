@@ -26,12 +26,12 @@ function ControlWeb() {
                 <h5 class="text-center mb-4" style="color: black">Acceder al Sistema</h5>
                 
                 <div class="form-group">
-                    <label for="emailAcceso" style="color: black">Email:</label>
+                    <label for="emailAcceso" style="color: white">Email:</label>
                     <input type="email" class="form-control" id="emailAcceso" placeholder="tu@email.com" style="color: black; background: white;">
                 </div>
                 
                 <div class="form-group">
-                    <label for="passwordAcceso" style="color: black">Contraseña:</label>
+                    <label for="passwordAcceso" style="color: white">Contraseña:</label>
                     <input type="password" class="form-control" id="passwordAcceso" placeholder="Tu contraseña" style="color: black; background: white;">
                 </div>
 
@@ -40,10 +40,11 @@ function ControlWeb() {
 
                 <hr>
                 
-                <div style="text-align:center">
-                    <p style="color: black">O inicia sesión con:</p>
-                    <a href="/auth/google">
-                        <img src="./img/btn_google_signin_dark_normal_web.png" style="height:40px; border-radius: 5px;">
+                <div style="text-align:center; margin-top: 15px;">
+                    <p style="color: white; margin-bottom: 10px;">O inicia sesión con:</p>
+                    <a href="/auth/google" class="btn btn-block" style="background: white; color: #333; border: 1px solid #ddd; font-weight: 600; display: flex; align-items: center; justify-content: center;">
+                        <img src="https://img.icons8.com/color/48/google-logo.png" alt="" style="height:24px; margin-right: 10px;">
+                        Iniciar sesión con Google
                     </a>
                 </div>
             </div>
@@ -432,7 +433,10 @@ function ControlWeb() {
 
     this.mostrarModal = function (m) {
         $("#msg").remove();
-        let cadena = "<div id='msg'>" + m + "</div>";
+        let mensaje = m || "Ha ocurrido un error desconocido (mensaje vacío)";
+
+        let cadena = "<div id='msgModal'>" + mensaje + "</div>";
+
         $('#mBody').html(cadena);
         $('#miModal').modal();
     };
