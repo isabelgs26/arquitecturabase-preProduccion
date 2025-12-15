@@ -29,8 +29,8 @@ function ClienteWS() {
         });
 
         this.socket.on("partidaCancelada", function () {
-            console.log("Tu partida ha sido cancelada");
-            cw.mostrarHome();
+            cli.codigo = undefined;
+            cw.mostrarCierrePorAbandono();
         });
 
         this.socket.on("juegoIniciado", function (datos) {

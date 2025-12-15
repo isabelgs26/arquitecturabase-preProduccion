@@ -352,6 +352,34 @@ function ControlWeb() {
         });
     };
 
+
+    this.mostrarCierrePorAbandono = function () {
+        this.limpiar();
+
+        let html = `
+        <div class="card border-danger text-center" style="max-width: 500px; margin: 0 auto;">
+            <div class="card-header bg-danger text-white">
+                <h3>🚫 Partida Finalizada</h3>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title text-danger">Tu rival ha abandonado la partida</h5>
+                <p class="card-text text-dark">
+                    La partida se ha cerrado porque el otro jugador se desconectó o canceló el juego.
+                </p>
+                <hr>
+                <p class="text-muted">¿Qué quieres hacer ahora?</p>
+                <button id="btnVolverJugar" class="btn btn-primary btn-lg btn-block">
+                    Volver a Jugar
+                </button>
+            </div>
+        </div>`;
+
+        $("#au").html(html);
+
+        $("#btnVolverJugar").on("click", function () {
+            cw.mostrarCrearPartida();
+        });
+    };
     this.mostrarEliminarUsuario = function () {
         this.limpiar();
 
