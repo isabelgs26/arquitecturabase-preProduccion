@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cliente</title>
+    <link rel="icon" type="image/png" href="./img/favicon.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
@@ -20,26 +21,6 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* Navbar moderna y transparente */
-        .navbar {
-            background: rgba(15, 23, 42, 0.9) !important;
-            backdrop-filter: blur(15px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 15px 0;
-        }
-
-        .navbar-brand,
-        .nav-link {
-            color: #e2e8f0 !important;
-            font-weight: 600;
-            transition: color 0.3s ease;
-        }
-
-        .nav-link:hover {
-            color: #60a5fa !important;
-        }
-
-        /* Contenedor principal */
         .container {
             margin-top: 80px;
             display: flex;
@@ -49,7 +30,102 @@
             min-height: calc(100vh - 80px);
         }
 
-        /* Formulario grande y atractivo */
+        hr {
+            border-color: rgba(255, 255, 255, 0.2);
+            margin: 30px 0;
+        }
+
+        .navbar {
+            background: rgba(15, 23, 42, 0.9) !important;
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand,
+        .nav-link {
+            color: #e2e8f0 !important;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .navbar-nav .nav-link {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #ffffff !important;
+            letter-spacing: 0.5px;
+            text-transform: capitalize;
+            padding-left: 15px;
+            padding-right: 15px;
+            font-family: 'Segoe UI', 'Verdana', sans-serif;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: #60a5fa !important;
+            transform: scale(1.05);
+        }
+
+        #cerrarSesionItem .nav-link {
+            font-size: 1.2rem;
+            color: #ff6b6b !important;
+        }
+
+        .dropdown-menu {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            margin-top: 0;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            padding: 10px 0;
+        }
+
+        .dropdown-menu .dropdown-item {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffffff !important;
+            padding: 12px 25px;
+            transition: all 0.2s ease;
+            font-family: 'Segoe UI', 'Verdana', sans-serif;
+        }
+
+        .dropdown-menu .dropdown-item:hover {
+            background-color: rgba(96, 165, 250, 0.15);
+            color: #60a5fa !important;
+            transform: translateX(10px);
+        }
+
+        .dropdown-divider {
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            margin: 10px 0;
+        }
+
+        .dropdown-menu .dropdown-item.text-danger {
+            color: #ff6b6b !important;
+        }
+
+        .dropdown-menu .dropdown-item.text-danger:hover {
+            background-color: rgba(255, 107, 107, 0.15);
+            color: #ff4757 !important;
+        }
+
+        .navbar-nav .dropdown:hover .dropdown-menu {
+            display: block;
+            margin-top: 0;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .card {
             background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(20px);
@@ -73,7 +149,24 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* Campos de formulario grandes */
+        #zonaPartidas .card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            color: white;
+        }
+
+        #zonaPartidas .card-body {
+            background: transparent !important;
+        }
+
+        #zonaPartidas h5,
+        #zonaPartidas h6 {
+            color: #f8fafc;
+            font-weight: 600;
+        }
+
         .form-group {
             margin-bottom: 25px;
         }
@@ -107,7 +200,6 @@
             color: #94a3b8;
         }
 
-        /* Botones grandes y modernos */
         .btn {
             border: none;
             border-radius: 12px;
@@ -142,49 +234,49 @@
             transform: translateY(-2px);
         }
 
-        /* Separador */
-        hr {
-            border-color: rgba(255, 255, 255, 0.2);
-            margin: 30px 0;
-        }
-
-        /* Texto centrado */
-        .text-center p {
-            color: #cbd5e1;
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-        }
-
-        /* Logo de Google */
-        a[href="/auth/google"] img {
-            border-radius: 8px;
-            transition: transform 0.3s ease;
-        }
-
-        a[href="/auth/google"] img:hover {
-            transform: scale(1.05);
-        }
-
-        /* Título principal */
-        h3.text-white {
+        .table,
+        table {
             color: #f8fafc !important;
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 30px;
-            text-align: center;
-            background: linear-gradient(45deg, #60a5fa, #a78bfa, #f472b6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            background-color: rgba(15, 23, 42, 0.6) !important;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 20px;
         }
 
-        /* Mensajes de alerta */
+        .table th,
+        .table td {
+            border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+            vertical-align: middle;
+        }
+
+        .table thead th {
+            background-color: rgba(59, 130, 246, 0.3) !important;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3) !important;
+            color: #ffffff;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .table-hover tbody tr:hover {
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        #listaUsuarios .card {
+            max-width: 95% !important;
+            width: auto;
+            min-width: 800px;
+        }
+
         .alert {
             border-radius: 12px;
             border: none;
             font-weight: 600;
         }
 
-        /* Estilos para la lista de partidas */
         .list-group-item {
             background: rgba(30, 41, 59, 0.9) !important;
             border: 1px solid rgba(255, 255, 255, 0.2) !important;
@@ -199,7 +291,6 @@
             border-color: rgba(96, 165, 250, 0.5) !important;
         }
 
-        /* Botones dentro de la lista */
         .list-group-item .btn {
             background: linear-gradient(45deg, #3b82f6, #8b5cf6);
             border: none;
@@ -214,23 +305,30 @@
             transform: translateY(-1px);
         }
 
-        /* Contenedor de partidas */
-        #zonaPartidas .card {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 20px;
-            color: white;
+        h3.text-white {
+            color: #f8fafc !important;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            text-align: center;
+            background: linear-gradient(45deg, #60a5fa, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        #zonaPartidas .card-body {
-            background: transparent !important;
+        .text-center p {
+            color: #cbd5e1;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
         }
 
-        #zonaPartidas h5,
-        #zonaPartidas h6 {
-            color: #f8fafc;
-            font-weight: 600;
+        a[href="/auth/google"] img {
+            border-radius: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        a[href="/auth/google"] img:hover {
+            transform: scale(1.05);
         }
     </style>
 </head>
@@ -238,40 +336,51 @@
 <body>
 
     <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
-        <a id="navInicio" class="navbar-brand" href="#">Sistema</a>
-        <ul class="navbar-nav">
+        <a id="navInicio" class="navbar-brand" href="#">
+            <img src="./img/logo (2).png" alt="Mr. Dash" style="height: 100px;">
+        </a>
+
+        <ul class="navbar-nav mr-auto">
             <li class="nav-item">
                 <a class="nav-link" href="#" onclick="cw.mostrarAcceso()">Acceder al Sistema</a>
             </li>
-            <li class="nav-item" style="display: none;">
-                <a class="nav-link" href="#" onclick="cw.mostrarObtenerUsuarios()">Ver Usuarios</a>
+
+            <li class="nav-item" id="menuJugar" style="display: none;">
+                <a class="nav-link" href="#" onclick="cw.mostrarCrearPartida()">Jugar</a>
             </li>
-            <li class="nav-item" style="display: none;">
-                <a class="nav-link" href="#" onclick="cw.mostrarNumeroUsuarios()">Número Usuarios</a>
+
+            <li class="nav-item dropdown" id="menuGestion" style="display: none;">
+                <a class="nav-link dropdown-toggle" href="#" id="navbardrop" data-toggle="dropdown">
+                    Gestión de usuarios
+                </a>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="#" onclick="cw.mostrarObtenerUsuarios()">Ver Usuarios</a>
+                    <a class="dropdown-item" href="#" onclick="cw.mostrarNumeroUsuarios()">Número Usuarios</a>
+                    <a class="dropdown-item" href="#" onclick="cw.mostrarUsuarioActivo()">Consultar Estado</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item text-danger" href="#" onclick="cw.mostrarEliminarUsuario()">Eliminar
+                        Usuario</a>
+                </div>
             </li>
-            <li class="nav-item" style="display: none;">
-                <a class="nav-link" href="#" onclick="cw.mostrarUsuarioActivo()">Consultar Estado</a>
-            </li>
-            <li class="nav-item" style="display: none;">
-                <a class="nav-link" href="#" onclick="cw.mostrarEliminarUsuario()">Eliminar Usuario</a>
-            </li>
+        </ul>
+
+        <ul class="navbar-nav">
             <li id="cerrarSesionItem" class="nav-item" style="display: none;">
-                <a class="nav-link" href="#" onclick="cw.salir();">Cerrar Sesión</a>
+                <a class="nav-link text-danger" href="#" onclick="cw.salir();">
+                    Cerrar Sesión &times;
+                </a>
             </li>
         </ul>
     </nav>
 
     <div class="container">
-
         <div id="au"></div>
         <div id="msg"></div>
     </div>
 
-<div id="g_id_onload" data-client_id="GOOGLE_CLIENT_ID_PLACEHOLDER"
-    data-login_uri="DATA_LOGIN_URI_PLACEHOLDER" 
-    data-auto_prompt="true" data-context="signin"
-    data-skip_prompt_cookie="nick">
-</div>
+    <div id="g_id_onload" data-client_id="GOOGLE_CLIENT_ID_PLACEHOLDER" data-login_uri="DATA_LOGIN_URI_PLACEHOLDER"
+        data-auto_prompt="true" data-context="signin" data-skip_prompt_cookie="nick">
+    </div>
 
     <div class="modal" id="miModal">
         <div class="modal-dialog">
@@ -280,9 +389,7 @@
                     <h4 class="modal-title">Atención</h4>
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
-                <div class="modal-body" id="mBody">
-
-                </div>
+                <div class="modal-body" id="mBody"></div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
                 </div>
@@ -294,9 +401,7 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-
     <script src="./controlWeb.js"></script>
     <script src="./clienteRest.js"></script>
     <script src="./clienteWS.js"></script>
@@ -305,7 +410,6 @@
         let rest;
         let ws;
 
-        // Definimos la función ini() como en el PDF
         function ini() {
             cw = new ControlWeb();
             rest = new ClienteRest(cw);
@@ -313,13 +417,10 @@
             cw.comprobarSesion();
         }
 
-        // Llamamos a ini() cuando el documento esté listo
         $(document).ready(function () {
             ini();
         });
     </script>
-
 </body>
-
 
 </html>
