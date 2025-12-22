@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 const gestor = require('./gestorVariables');
 
-const url = "http://localhost:3000/";
+const url = process.env.URL_BASE || "http://localhost:3000/";
 
 let transporter;
 let options = {
@@ -81,4 +81,5 @@ module.exports.enviarEmail = async function (direccion, key, men) {
         console.error("Error al enviar email:", error);
         throw error;
     }
+
 };

@@ -32,10 +32,12 @@ function WSServer(io) {
                         sistema.obtenerEstadisticasPartida(codigo, function (partida) {
                             if (partida) {
                                 srv.enviarGlobal(io, "estadoPartidaActualizado", {
-                                    "codigo": codigo,
-                                    "estado": partida.estado,
-                                    "jugadores": partida.jugadores
+                                    codigo: codigo,
+                                    estado: partida.estado,
+                                    creador: partida.creador,
+                                    jugadores: partida.jugadores
                                 });
+
                             }
                         });
 
@@ -60,16 +62,25 @@ function WSServer(io) {
             socket.on("iniciarJuego", function (datos) {
                 sistema.iniciarJuego(datos.codigo, datos.email, function (resultado) {
                     if (resultado === 1) {
-                        srv.enviarGlobal(io, "juegoIniciado", {
-                            "codigo": datos.codigo
+
+                        sistema.obtenerEstadisticasPartida(datos.codigo, function (partida) {
+                            if (partida) {
+                                srv.enviarGlobal(io, "juegoIniciado", {
+                                    codigo: datos.codigo,
+                                    creador: partida.creador,
+                                    jugadores: partida.jugadores
+                                });
+                            }
                         });
+
                     } else {
                         srv.enviarAlRemitente(socket, "errorIniciarJuego", {
-                            "razon": resultado
+                            razon: resultado
                         });
                     }
                 });
             });
+
         });
     }
 

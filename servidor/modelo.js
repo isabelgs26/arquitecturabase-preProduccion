@@ -80,13 +80,15 @@ function Sistema(objConfig = {}) {
                     jugadores: partidaBD.jugadores
                 };
 
-                if (partidaBD.jugadores.length === partidaBD.maxJug) {
+                if (partidaBD.jugadores.length >= partidaBD.maxJug) {
                     actualizacion.estado = "completa";
                     actualizacion.puntuaciones = {};
                     partidaBD.jugadores.forEach(jugador => {
                         actualizacion.puntuaciones[jugador.email] = 0;
                     });
+                    console.log("Partida " + codigo + " completada. Estado actualizado a 'completa'.");
                 }
+
                 modelo.cad.actualizarPartida(codigo, actualizacion, function (updated) {
                     if (updated) {
                         modelo.cad.insertarLog({
@@ -124,7 +126,6 @@ function Sistema(objConfig = {}) {
         this.cad.obtenerLogs(callback);
     }
 
-    // Método para actualizar puntuación
     this.actualizarPuntuacion = function (codigo, email, puntos, callback) {
         let modelo = this;
 
@@ -148,7 +149,6 @@ function Sistema(objConfig = {}) {
         });
     }
 
-    // Método para finalizar partida
     this.finalizarPartida = function (codigo, callback) {
         let modelo = this;
 
@@ -171,7 +171,6 @@ function Sistema(objConfig = {}) {
         });
     }
 
-    // Método para obtener estadísticas de partida
     this.obtenerEstadisticasPartida = function (codigo, callback) {
         this.cad.obtenerPartida(codigo, function (partida) {
             if (!partida) {
@@ -198,16 +197,19 @@ function Sistema(objConfig = {}) {
 
         this.cad.obtenerPartida(codigo, function (partida) {
             if (!partida) {
+                console.log("Error iniciarJuego: Partida no encontrada");
                 callback(-1);
                 return;
             }
 
             if (partida.creador !== email) {
+                console.log("Error iniciarJuego: Usuario no es creador (" + email + " vs " + partida.creador + ")");
                 callback(-2);
                 return;
             }
 
             if (partida.estado !== "completa") {
+                console.log("Error iniciarJuego: Estado incorrecto (" + partida.estado + "). Jugadores: " + partida.jugadores.length);
                 callback(-3);
                 return;
             }
@@ -237,7 +239,6 @@ function Sistema(objConfig = {}) {
 
 }
 
-// --- MÉTODOS DEL PROTOTIPO ---
 
 Sistema.prototype.inicializar = async function () {
     if (!this.test) {

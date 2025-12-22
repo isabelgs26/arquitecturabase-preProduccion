@@ -362,6 +362,10 @@
             color: #ff6b6b !important;
             opacity: 1;
         }
+
+        #juego {
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -407,6 +411,14 @@
 
     <div class="container">
         <div id="au"></div>
+
+        <div id="juego" style="display: none;">
+            <h3 id="info-partida" style="color: white; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 10px;">
+                Partida en curso</h3>
+            <canvas id="miCanvas" width="800" height="400"
+                style="border: 2px solid #333; background-color: #87CEEB;"></canvas>
+        </div>
+
         <div id="msg"></div>
     </div>
 
@@ -434,23 +446,29 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+
     <script src="./controlWeb.js"></script>
     <script src="./clienteRest.js"></script>
     <script src="./clienteWS.js"></script>
+    <script src="./juego.js"></script>
     <script>
         let cw;
         let rest;
         let ws;
+        let juego;
 
         function ini() {
             cw = new ControlWeb();
             rest = new ClienteRest(cw);
             ws = new ClienteWS();
+            juego = new Juego();
             cw.comprobarSesion();
         }
 
         $(document).ready(function () {
             ini();
+            $('#juego').show();
+            juego.iniciar(true);
         });
     </script>
 </body>

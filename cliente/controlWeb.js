@@ -406,11 +406,17 @@ function ControlWeb() {
         });
     };
 
+    this.mostrarPantallaJuego = function (soyJugadorA) {
+        this.limpiar();
+        $("#juego").show();
+        juego.iniciar(soyJugadorA);
+    };
     this.limpiar = function () {
         $("#au").empty();
         $("#msg").remove();
         $("#listaUsuarios").remove();
         $("#fmRegistro").remove();
+        $("#juego").hide();
     };
 
     this.mostrarMensaje = function (msg, tipo = "info") {
@@ -439,5 +445,19 @@ function ControlWeb() {
 
         $('#mBody').html(cadena);
         $('#miModal').modal();
+    };
+    this.usuarioLogueado = function (usuario) {
+        if (usuario.email) {
+            ws.email = usuario.email;
+
+            $.cookie("nick", usuario.nick);
+            $.cookie("email", usuario.email);
+
+            this.mostrarHome(usuario.nick);
+        } else {
+            this.mostrarMensaje("Email o contraseña incorrectos", "error");
+            $("#emailAcceso").val("");
+            $("#passwordAcceso").val("");
+        }
     };
 }
