@@ -58,7 +58,6 @@ function Juego() {
         this.soyJugadorA = soyA;
         if (!this.canvas) this.ini();
         this.bucle = requestAnimationFrame(() => this.actualizar());
-        this.programarSiguienteObstaculo();
     }
 
     this.saltar = function () {
@@ -138,59 +137,9 @@ function Juego() {
         this.ctx.fillText("Jugador B: " + this.personajeB.puntuacion, 20, 60);
     }
 
-    this.tiposObstaculos = [
-        { nombre: "obstaculoA", puntuacion: 5, probabilidad: 0.7 },
-        { nombre: "obstaculoB", puntuacion: 15, probabilidad: 0.25 },
-        { nombre: "obstaculoC", puntuacion: 25, probabilidad: 0.05 }
-    ];
-
-    this.seleccionarTipoObstaculo = function () {
-        const rnd = Math.random();
-        let acumulado = 0;
-        for (let tipo of this.tiposObstaculos) {
-            acumulado += tipo.probabilidad;
-            if (rnd <= acumulado) return tipo;
-        }
-        return this.tiposObstaculos[0];
-    }
-
-    this.crearObstaculoAleatorio = function () {
-        const tipo = this.seleccionarTipoObstaculo();
-        const img = this.imgObstaculos[tipo.nombre];
-
-        const ancho = 50;
-        const alto = 50;
-
-        // Altura aleatoria dentro de rango jugable
-        const alturaMaxUsable = this.alturaMaxSalto * 0.7;
-        const alturaMin = this.sueloY - alturaMaxUsable; // más alto
-        const alturaMax = this.sueloY - alto;           // más bajo
-        const y = alturaMin + Math.random() * (alturaMax - alturaMin);
-
-        const obstaculo = {
-            id: Date.now(),
-            x: this.ancho,
-            y: y,
-            ancho,
-            alto,
-            velocidad: 4 + Math.random() * 3,
-            activo: true,
-            esquivadoA: false,
-            esquivadoB: false,
-            puntuacion: tipo.puntuacion,
-            img: img
-        };
-
-        this.obstaculos.push(obstaculo);
-    }
 
     this.actualizarObstaculos = function () {
-        this.obstaculos.forEach(obstaculo => {
-            if (obstaculo.activo) {
-                obstaculo.x -= obstaculo.velocidad;
-                if (obstaculo.x + obstaculo.ancho < 0) obstaculo.activo = false;
-            }
-        });
+        this.obstaculos = this.obstaculos.filter(o => o.activo !== false);
     }
 
     this.dibujarObstaculos = function () {
@@ -260,11 +209,19 @@ function Juego() {
         alert(mensaje);
     }
 
-    this.programarSiguienteObstaculo = function () {
-        const tiempo = 1000 + Math.random() * 2000;
-        setTimeout(() => {
-            this.crearObstaculoAleatorio();
-            this.programarSiguienteObstaculo();
-        }, tiempo);
+    this.sincronizarEstado = function (estado) {
+        this.personajeA = { ...this.personajeA, ...estado.jugadores.A };
+        this.personajeB = { ...this.personajeB, ...estado.jugadores.B };
+
+        this.obstaculos = estado.obstaculos.map(o => ({
+            ...o,
+            activo: true,
+            img: this.imgObstaculos[o.tipo]
+        }));
+
+        this.juegoTerminado = estado.juegoTerminado;
     }
+
+
+
 }

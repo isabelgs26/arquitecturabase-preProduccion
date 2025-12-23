@@ -47,7 +47,10 @@ function ClienteWS() {
         this.socket.on("juegoIniciado", function (datos) {
             console.log("¡Juego iniciado!", datos);
             let soyJugadorA = (datos.creador === cli.email);
+            const canvas = document.getElementById("miCanvas");
+            canvas.style.display = "block";
             if (cw) cw.mostrarPantallaJuego(soyJugadorA);
+
         });
 
         this.socket.on("errorIniciarJuego", function (datos) {
@@ -58,8 +61,11 @@ function ClienteWS() {
         this.socket.on("jugadorSalto", function (datos) {
             if (juego) juego.otroJugadorSalta();
         });
-    };
 
+        this.socket.on("estadoJuego", function (estado) {
+            if (juego) juego.sincronizarEstado(estado);
+        });
+    };
 
     this.crearPartida = function () {
         this.socket.emit("crearPartida", { "email": this.email });
@@ -95,3 +101,19 @@ function ClienteWS() {
 
     this.ini();
 }
+
+Juego.prototype.sincronizarEstado = function (estado) {
+    this.personajeA.y = estado.jugadores.A.y;
+    this.personajeA.vy = estado.jugadores.A.vy;
+    this.personajeA.saltando = estado.jugadores.A.saltando;
+    this.personajeA.puntuacion = estado.jugadores.A.puntuacion;
+
+    this.personajeB.y = estado.jugadores.B.y;
+    this.personajeB.vy = estado.jugadores.B.vy;
+    this.personajeB.saltando = estado.jugadores.B.saltando;
+    this.personajeB.puntuacion = estado.jugadores.B.puntuacion;
+
+    this.obstaculos = estado.obstaculos;
+    this.juegoTerminado = estado.juegoTerminado;
+};
+
