@@ -131,10 +131,16 @@ function Juego() {
         this.dibujarObstaculos();
 
         // Puntuaciones
+        this.ctx.save();
         this.ctx.fillStyle = "black";
-        this.ctx.font = "24px Arial";
-        this.ctx.fillText("Jugador A: " + this.personajeA.puntuacion, 20, 30);
-        this.ctx.fillText("Jugador B: " + this.personajeB.puntuacion, 20, 60);
+        this.ctx.font = "bold 30px Arial";
+
+        this.ctx.textAlign = "left";
+        this.ctx.fillText("Jugador A: " + this.personajeA.puntuacion, 30, 50);
+
+        this.ctx.textAlign = "right";
+        this.ctx.fillText("Jugador B: " + this.personajeB.puntuacion, this.ancho - 30, 50);
+        this.ctx.restore();
     }
 
 

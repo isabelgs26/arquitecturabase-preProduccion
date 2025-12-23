@@ -3,15 +3,12 @@ function WSServer(io) {
 
     const SUELO_Y = 500;
     const GRAVEDAD = 0.8;
-    const FUERZA_SALTO = -20;
+    const FUERZA_SALTO = -25;
     const ANCHO_CANVAS = 1200;
 
     const ALTURA_OBSTACULO = 50;
-    const VELOCIDAD_OBSTACULO = 4;
+    const VELOCIDAD_OBSTACULO_DEFAULT = 4;
 
-    // --------------------------------------------------------
-    // FUNCIONES DE ENVÍO (DEFINIDAS AL PRINCIPIO PARA EVITAR ERRORES)
-    // --------------------------------------------------------
     this.enviarAlRemitente = function (socket, mensaje, datos) {
         socket.emit(mensaje, datos);
     }
@@ -24,31 +21,24 @@ function WSServer(io) {
         io.emit(mens, datos);
     }
 
-    // --------------------------------------------------------
-    // LÓGICA PRINCIPAL DEL SERVIDOR
-    // --------------------------------------------------------
     this.lanzarServidor = function (io, sistema) {
-        let srv = this; // 'this' ahora tiene garantizadas las funciones de arriba
+        let srv = this;
 
         io.on('connection', function (socket) {
             console.log("Capa WS activa");
 
             socket.on("crearPartida", function (datos) {
-                console.log("Servidor ha recibido 'crearPartida' con datos:", datos);
-
+                console.log("WS: crearPartida de " + datos.email);
                 sistema.crearPartida(datos.email, function (codigo) {
-                    console.log("Código de partida generado (async):", codigo);
-
                     if (codigo != -1) {
+                        console.log("WS: Partida creada " + codigo);
                         socket.join(codigo);
-                        // Aquí es donde te daba el error antes:
                         srv.enviarAlRemitente(socket, "partidaCreada", { "codigo": codigo });
-
                         sistema.obtenerPartidasDisponibles(function (lista) {
                             srv.enviarATodosMenosRemitente(socket, "listaPartidas", lista);
                         });
                     } else {
-                        console.log("No se pudo crear la partida (código -1).");
+                        console.log("WS: Error al crear partida");
                     }
                 });
             });
@@ -56,6 +46,7 @@ function WSServer(io) {
             socket.on("unirAPartida", function (datos) {
                 sistema.unirAPartida(datos.email, datos.codigo, function (codigo) {
                     if (codigo != -1) {
+                        console.log("WS: Jugador " + datos.email + " unido a " + codigo);
                         socket.join(codigo);
                         srv.enviarAlRemitente(socket, "unidoAPartida", { "codigo": codigo });
 
@@ -89,18 +80,21 @@ function WSServer(io) {
             });
 
             socket.on("iniciarJuego", function (datos) {
+                console.log("WS: Intento de iniciar juego " + datos.codigo + " por " + datos.email);
                 sistema.iniciarJuego(datos.codigo, datos.email, function (resultado) {
                     if (resultado === 1) {
                         sistema.obtenerEstadisticasPartida(datos.codigo, function (partida) {
                             if (partida) {
+                                console.log("WS: Juego iniciado. Creador oficial: " + partida.creador);
                                 srv.enviarGlobal(io, "juegoIniciado", {
                                     codigo: datos.codigo,
                                     creador: partida.creador,
                                     jugadores: partida.jugadores
                                 });
+
                                 if (!juegos[datos.codigo]) {
                                     juegos[datos.codigo] = {
-                                        creador: datos.email,
+                                        creador: partida.creador,
                                         jugadores: {
                                             A: { y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0 },
                                             B: { y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0 }
@@ -109,7 +103,6 @@ function WSServer(io) {
                                         juegoTerminado: false
                                     };
 
-                                    // Bucle de actualización de juego
                                     juegos[datos.codigo].intervalo = setInterval(() => {
                                         actualizarJuego(datos.codigo, io);
                                     }, 50);
@@ -118,9 +111,7 @@ function WSServer(io) {
                         });
 
                     } else {
-                        srv.enviarAlRemitente(socket, "errorIniciarJuego", {
-                            razon: resultado
-                        });
+                        srv.enviarAlRemitente(socket, "errorIniciarJuego", { razon: resultado });
                     }
                 });
             });
@@ -129,8 +120,10 @@ function WSServer(io) {
                 const juego = juegos[datos.codigo];
                 if (!juego) return;
 
-                // Determinar jugador (creador = A, otro = B)
-                const jugador = (datos.email === juego.creador) ? 'A' : 'B';
+                let esCreador = (datos.email && juego.creador && datos.email.trim() === juego.creador.trim());
+
+                const jugador = esCreador ? 'A' : 'B';
+
                 const pj = juego.jugadores[jugador];
                 if (!pj.saltando) {
                     pj.vy = FUERZA_SALTO;
@@ -141,14 +134,13 @@ function WSServer(io) {
         });
     };
 
-    // --------------------------------------------------------
-    // BUCLE DE JUEGO
-    // --------------------------------------------------------
     function actualizarJuego(codigo, io) {
         const juego = juegos[codigo];
         if (!juego || juego.juegoTerminado) return;
 
-        // Física jugadores
+        const POSICION_X_JUGADOR_A = 50;
+        const POSICION_X_JUGADOR_B = 150;
+
         for (let key of ['A', 'B']) {
             const p = juego.jugadores[key];
             p.vy += GRAVEDAD;
@@ -160,21 +152,37 @@ function WSServer(io) {
             }
         }
 
-        // Mover obstáculos
         for (let o of juego.obstaculos) {
             o.x -= o.velocidad || 4;
-        }
-        juego.obstaculos = juego.obstaculos.filter(o => o.x + (o.ancho || 50) > 0);
 
-        // Generar nuevos obstáculos
+            if (!o.contadoA && o.x + o.ancho < POSICION_X_JUGADOR_A) {
+                juego.jugadores.A.puntuacion += o.puntuacion;
+                o.contadoA = true;
+            }
+
+            if (!o.contadoB && o.x + o.ancho < POSICION_X_JUGADOR_B) {
+                juego.jugadores.B.puntuacion += o.puntuacion;
+                o.contadoB = true;
+            }
+        }
+
+        juego.obstaculos = juego.obstaculos.filter(o => o.x + (o.ancho || 50) > -100);
+
         if (Math.random() < 0.02) {
             let randomTipo = Math.random();
+            let velocidadAleatoria = Math.floor(Math.random() * (10 - 4 + 1)) + 4;
+
+            let despegueSuelo = Math.floor(Math.random() * 120);
+            let yAleatoria = (SUELO_Y - 50) - despegueSuelo;
+
             let nuevoObstaculo = {
                 x: ANCHO_CANVAS,
-                y: SUELO_Y - 50,
+                y: yAleatoria,
                 ancho: 50,
                 alto: 50,
-                velocidad: 4
+                velocidad: velocidadAleatoria,
+                contadoA: false,
+                contadoB: false
             };
 
             if (randomTipo < 0.60) {
@@ -186,13 +194,12 @@ function WSServer(io) {
             } else {
                 nuevoObstaculo.tipo = "obstaculoC";
                 nuevoObstaculo.puntuacion = 30;
-                nuevoObstaculo.velocidad = 6;
             }
             juego.obstaculos.push(nuevoObstaculo);
         }
 
         io.to(codigo).emit("estadoJuego", juego);
     }
-
 }
+
 module.exports.WSServer = WSServer;
