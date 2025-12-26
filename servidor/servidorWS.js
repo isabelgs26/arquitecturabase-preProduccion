@@ -31,7 +31,13 @@ function WSServer(io) {
             });
 
             socket.on("crearPartida", function (datos) {
-                console.log("WS: crearPartida de " + datos.email);
+                if (socket.partidaCodigo) {
+                    socket.emit("accionRechazada", {
+                        accion: "crearPartida",
+                        motivo: "YA_EN_PARTIDA"
+                    });
+                    return;
+                }
                 sistema.crearPartida(datos.email, function (codigo) {
                     if (codigo != -1) {
                         console.log("WS: Partida creada " + codigo);
@@ -76,88 +82,178 @@ function WSServer(io) {
                 });
             });
 
-            socket.on("cancelarPartida", function (datos) {
-                sistema.eliminarPartida(datos.codigo, datos.email, function (borrada) {
-                    if (borrada) {
-                        sistema.obtenerPartidasDisponibles(function (lista) {
-                            srv.enviarGlobal(io, "listaPartidas", lista);
-                            srv.enviarGlobal(io, "partidaCancelada", { "codigo": datos.codigo });
-                        });
-                    }
-                });
-            });
+            socket.on("cancelarPartida", function () {
+                const codigo = socket.partidaCodigo;
+                const email = socket.email;
 
-            socket.on("iniciarJuego", function (datos) {
-                console.log("WS: Intento de iniciar juego " + datos.codigo + " por " + datos.email);
-                sistema.iniciarJuego(datos.codigo, datos.email, function (resultado) {
-                    if (resultado === 1) {
-                        sistema.obtenerEstadisticasPartida(datos.codigo, function (partida) {
-                            if (partida) {
-                                console.log("WS: Juego iniciado. Creador oficial: " + partida.creador);
-                                srv.enviarGlobal(io, "juegoIniciado", {
-                                    codigo: datos.codigo,
-                                    creador: partida.creador,
-                                    jugadores: partida.jugadores
-                                });
+                if (!codigo || !email) return;
 
-                                if (!juegos[datos.codigo]) {
-                                    juegos[datos.codigo] = {
-                                        creador: partida.creador,
-                                        jugadores: {
-                                            A: { y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0 },
-                                            B: { y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0 }
-                                        },
-                                        obstaculos: [],
-                                        juegoTerminado: false
-                                    };
+                // si el juego ya empezó, no se puede cancelar
+                if (juegos[codigo]) {
+                    socket.emit("accionRechazada", {
+                        accion: "cancelarPartida",
+                        motivo: "PARTIDA_EN_CURSO"
+                    });
+                    return;
+                }
 
-                                    juegos[datos.codigo].intervalo = setInterval(() => {
-                                        actualizarJuego(datos.codigo, io);
-                                    }, 50);
-                                }
-                            }
+                sistema.obtenerEstadisticasPartida(codigo, function (partida) {
+                    if (!partida) return;
+
+                    const esCreador = email === partida.creador;
+
+                    if (esCreador) {
+                        // Creador sale → eliminar partida
+                        sistema.eliminarPartida(codigo, email, function () {
+                            io.to(codigo).emit("partidaCancelada", {
+                                motivo: "CREADOR_SALIO"
+                            });
+
+                            io.emit("listaPartidas");
                         });
 
                     } else {
-                        srv.enviarAlRemitente(socket, "errorIniciarJuego", { razon: resultado });
+                        // Jugador 2 sale → abandonar partida
+                        sistema.salirDePartida(codigo, email, function () {
+                            socket.leave(codigo);
+                            socket.partidaCodigo = null;
+                            socket.email = null;
+
+                            io.to(codigo).emit("rivalSalio", {
+                                email
+                            });
+
+                            socket.emit("salidaConfirmada");
+                        });
                     }
                 });
             });
 
+
+
+            socket.on("iniciarJuego", function () {
+                const codigo = socket.partidaCodigo;
+                const email = socket.email;
+
+                if (!codigo || !email) return;
+
+                sistema.iniciarJuego(codigo, email, function (resultado) {
+                    if (resultado !== 1) {
+                        socket.emit("errorIniciarJuego", { razon: resultado });
+                        return;
+                    }
+
+                    sistema.obtenerEstadisticasPartida(codigo, function (partida) {
+                        if (!partida) return;
+
+                        if (juegos[codigo]) {
+                            socket.emit("errorIniciarJuego", { razon: "YA_INICIADA" });
+                            return;
+                        }
+
+                        srv.enviarGlobal(io, "juegoIniciado", {
+                            codigo,
+                            creador: partida.creador,
+                            jugadores: partida.jugadores
+                        });
+
+                        juegos[codigo] = {
+                            creador: partida.creador,
+                            jugadores: {
+                                A: { y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0 },
+                                B: { y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0 }
+                            },
+                            obstaculos: [],
+                            juegoTerminado: false
+                        };
+
+                        juegos[codigo].intervalo = setInterval(() => {
+                            actualizarJuego(codigo, io);
+                        }, 50);
+                    });
+                });
+            });
+
+
             socket.on("saltar", function (datos) {
-                const juego = juegos[datos.codigo];
+                const codigo = socket.partidaCodigo;
+                const email = socket.email;
+
+                if (!codigo || !email) return;
+
+                const juego = juegos[codigo];
                 if (!juego) return;
 
-                let esCreador = (datos.email && juego.creador && datos.email.trim() === juego.creador.trim());
+                if (juego.juegoTerminado) return;
+
+                const esCreador = email === juego.creador;
 
                 const jugador = esCreador ? 'A' : 'B';
 
                 const pj = juego.jugadores[jugador];
-                if (!pj.saltando) {
-                    pj.vy = FUERZA_SALTO;
-                    pj.saltando = true;
-                }
+                if (!pj || pj.saltando) return;
+                pj.vy = FUERZA_SALTO;
+                pj.saltando = true;
             });
+
+            socket.on("abandonarPartida", function () {
+                const codigo = socket.partidaCodigo;
+                const email = socket.email;
+
+                if (!codigo || !email) return;
+
+                // solo tiene sentido si el juego está en curso
+                const juego = juegos[codigo];
+                if (!juego) return;
+
+                console.log(`WS: ${email} abandonó la partida ${codigo}`);
+
+                juego.juegoTerminado = true;
+
+                io.to(codigo).emit("partidaAbandonada", {
+                    email,
+                    codigo
+                });
+
+                clearInterval(juego.intervalo);
+                delete juegos[codigo];
+
+                sistema.eliminarPartida(codigo, email, function () {
+                    sistema.obtenerPartidasDisponibles(lista => {
+                        io.emit("listaPartidas", lista);
+                    });
+                });
+
+                socket.leave(codigo);
+                socket.partidaCodigo = null;
+                socket.email = null;
+            });
+
             socket.on("disconnect", function () {
                 const codigo = socket.partidaCodigo;
                 const email = socket.email;
 
                 if (!codigo || !email) return;
 
-                console.log(`WS: ${email} se desconectó de la partida ${codigo}`);
-
-                io.to(codigo).emit("rivalDesconectado", {
-                    email: email,
-                    codigo: codigo
-                });
+                console.log(`WS: ${email} se desconectó de ${codigo}`);
 
                 if (juegos[codigo]) {
+                    io.to(codigo).emit("partidaAbandonada", {
+                        email,
+                        codigo
+                    });
+
                     clearInterval(juegos[codigo].intervalo);
                     delete juegos[codigo];
+                } else {
+                    io.to(codigo).emit("rivalDesconectado", {
+                        email,
+                        codigo
+                    });
                 }
 
                 sistema.eliminarPartida(codigo, email, function () {
-                    sistema.obtenerPartidasDisponibles(function (lista) {
+                    sistema.obtenerPartidasDisponibles(lista => {
                         io.emit("listaPartidas", lista);
                     });
                 });

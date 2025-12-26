@@ -264,12 +264,6 @@ function ControlWeb() {
                 ws.iniciarJuego();
             });
         }
-        if (partida.creador !== email) {
-            socket.emit("errorIniciarJuego", { razon: "No eres el creador" });
-            return;
-        }
-
-
         $("#btnCancelarPartida").click(function () {
             ws.cancelarPartida(codigo);
             cw.mostrarCrearPartida();
@@ -378,11 +372,11 @@ function ControlWeb() {
             </div>
             <div class="card-body">
                 <h5 class="card-title text-danger">Tu rival ha abandonado la partida</h5>
-                <p class="card-text text-dark color:white;">
-                    La partida se ha cerrado porque el otro jugador se desconectó o canceló el juego.
+                <p class="card-text" style="color: white;">
+                    La partida ha terminado porque el otro jugador se desconectó o canceló el juego.
                 </p>
                 <hr>
-                <p class="text-muted">¿Qué quieres hacer ahora?</p>
+                <p style="color: white;">¿Qué quieres hacer ahora?</p>
                 <button id="btnVolverJugar" class="btn btn-primary btn-lg btn-block">
                     Volver a Jugar
                 </button>

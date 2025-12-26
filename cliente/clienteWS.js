@@ -80,6 +80,11 @@ function ClienteWS() {
                 cw.mostrarCierrePorAbandono();
             }
         });
+        this.socket.on("partidaAbandonada", function () {
+            if (cw) cw.mostrarCierrePorAbandono();
+            if (juego) juego.juegoTerminado = true;
+        });
+
 
     };
 

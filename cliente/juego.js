@@ -53,6 +53,10 @@ function Juego() {
                 juego.saltar();
             }
         });
+        $("#btnSalirJuego").click(function () {
+            ws.socket.emit("abandonarPartida");
+        });
+
     }
 
     this.iniciar = function (soyA) {
