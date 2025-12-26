@@ -67,6 +67,20 @@ function ClienteWS() {
         this.socket.on("estadoJuego", function (estado) {
             if (juego) juego.sincronizarEstado(estado);
         });
+        this.socket.on("rivalDesconectado", function (datos) {
+            console.log("Rival desconectado:", datos);
+
+            if (datos.email === cli.email) return;
+
+            if (juego) {
+                juego.juegoTerminado = true;
+            }
+
+            if (cw) {
+                cw.mostrarCierrePorAbandono();
+            }
+        });
+
     };
 
     this.crearPartida = function () {
@@ -100,7 +114,6 @@ function ClienteWS() {
             "codigo": this.codigo
         });
     }
-
     this.ini();
 }
 

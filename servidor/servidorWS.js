@@ -36,6 +36,8 @@ function WSServer(io) {
                     if (codigo != -1) {
                         console.log("WS: Partida creada " + codigo);
                         socket.join(codigo);
+                        socket.partidaCodigo = codigo;
+                        socket.email = datos.email;
                         srv.enviarAlRemitente(socket, "partidaCreada", { "codigo": codigo });
                         sistema.obtenerPartidasDisponibles(function (lista) {
                             srv.enviarATodosMenosRemitente(socket, "listaPartidas", lista);
@@ -44,6 +46,7 @@ function WSServer(io) {
                         console.log("WS: Error al crear partida");
                     }
                 });
+
             });
 
             socket.on("unirAPartida", function (datos) {
@@ -51,6 +54,8 @@ function WSServer(io) {
                     if (codigo != -1) {
                         console.log("WS: Jugador " + datos.email + " unido a " + codigo);
                         socket.join(codigo);
+                        socket.partidaCodigo = codigo;
+                        socket.email = datos.email;
                         srv.enviarAlRemitente(socket, "unidoAPartida", { "codigo": codigo });
 
                         sistema.obtenerEstadisticasPartida(codigo, function (partida) {
@@ -133,6 +138,31 @@ function WSServer(io) {
                     pj.saltando = true;
                 }
             });
+            socket.on("disconnect", function () {
+                const codigo = socket.partidaCodigo;
+                const email = socket.email;
+
+                if (!codigo || !email) return;
+
+                console.log(`WS: ${email} se desconectó de la partida ${codigo}`);
+
+                io.to(codigo).emit("rivalDesconectado", {
+                    email: email,
+                    codigo: codigo
+                });
+
+                if (juegos[codigo]) {
+                    clearInterval(juegos[codigo].intervalo);
+                    delete juegos[codigo];
+                }
+
+                sistema.eliminarPartida(codigo, email, function () {
+                    sistema.obtenerPartidasDisponibles(function (lista) {
+                        io.emit("listaPartidas", lista);
+                    });
+                });
+            });
+
 
         });
     };

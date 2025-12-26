@@ -378,7 +378,7 @@ function ControlWeb() {
             </div>
             <div class="card-body">
                 <h5 class="card-title text-danger">Tu rival ha abandonado la partida</h5>
-                <p class="card-text text-dark">
+                <p class="card-text text-dark color:white;">
                     La partida se ha cerrado porque el otro jugador se desconectó o canceló el juego.
                 </p>
                 <hr>
