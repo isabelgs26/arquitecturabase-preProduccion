@@ -12,13 +12,14 @@ function Juego() {
     this.altoP = 130;
 
     this.sueloY = 500;
-    this.alturaMaxSalto = 250;
+    this.alturaMaxSalto = 300;
 
     this.personajeA = { x: 50, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0 };
     this.personajeB = { x: 150, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0 };
 
-    this.gravedad = 0.8;
-    this.fuerzaSalto = -20;
+    this.gravedad = 0.4;
+    this.fuerzaSalto = -15;
+
 
     // Imágenes
     this.imgPersonajeA = new Image();

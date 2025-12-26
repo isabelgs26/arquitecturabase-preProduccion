@@ -4,6 +4,8 @@ function ClienteWS() {
     this.codigo = undefined;
 
     this.ini = function () {
+        const canvas = document.getElementById("miCanvas");
+        if (canvas) canvas.style.display = "none";
         this.socket = io.connect();
         this.lanzarServidorWS();
     }

@@ -1,5 +1,6 @@
 function ControlWeb() {
     let cw = this;
+    this.partidasCache = [];
 
     this.comprobarSesion = function () {
         let nick = $.cookie("nick");
@@ -147,10 +148,18 @@ function ControlWeb() {
         $("#btnCrearPartida").on("click", function () {
             ws.crearPartida();
         });
+        if (cw.partidasCache.length > 0) {
+            cw.mostrarListaPartidas(cw.partidasCache);
+        }
     };
 
     this.mostrarListaPartidas = function (lista) {
+        cw.partidasCache = lista;
+
         let listaDiv = $("#listaPartidas");
+        if (listaDiv.length === 0) {
+            return;
+        }
         listaDiv.empty();
 
         if (lista.length === 0) {
@@ -252,9 +261,14 @@ function ControlWeb() {
 
         if (esCreador) {
             $("#btnIniciarJuego").click(function () {
-                ws.iniciarJuego(codigo);
+                ws.iniciarJuego();
             });
         }
+        if (partida.creador !== email) {
+            socket.emit("errorIniciarJuego", { razon: "No eres el creador" });
+            return;
+        }
+
 
         $("#btnCancelarPartida").click(function () {
             ws.cancelarPartida(codigo);

@@ -26,6 +26,9 @@ function WSServer(io) {
 
         io.on('connection', function (socket) {
             console.log("Capa WS activa");
+            sistema.obtenerPartidasDisponibles(function (lista) {
+                srv.enviarAlRemitente(socket, "listaPartidas", lista);
+            });
 
             socket.on("crearPartida", function (datos) {
                 console.log("WS: crearPartida de " + datos.email);
