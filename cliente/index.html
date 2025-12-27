@@ -412,11 +412,37 @@
     <div class="container">
         <div id="au"></div>
 
-        <div id="juego" style="display: none;">
-            <canvas id="miCanvas" width="800" height="400"
-                style="display:none; border: 2px solid #333; background-color: #87CEEB;">
+        <div id="juego" style="display:none; position:relative; width:800px; margin:auto;">
+
+            <div id="overlayMensaje" style="
+            display:none;
+            position:absolute;
+            top:50%;
+            left:50%;
+            transform:translate(-50%,-50%);
+            background:rgba(0,0,0,0.75);
+            color:white;
+            padding:20px 30px;
+            border-radius:8px;
+            z-index:20;
+            font-size:18px;
+        ">
+            </div>
+
+            <button id="btnSalirJuego" class="btn btn-danger" style="
+            position:absolute;
+            top:10px;
+            left:50%;
+            transform:translateX(-50%);
+            z-index:10;
+        ">
+                Salir
+            </button>
+
+            <canvas id="miCanvas" width="800" height="400" style="border:2px solid #333; background-color:#87CEEB;">
             </canvas>
         </div>
+
 
         <div id="msg"></div>
     </div>

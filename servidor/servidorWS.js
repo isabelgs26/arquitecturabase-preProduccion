@@ -5,6 +5,7 @@ function WSServer(io) {
     const GRAVEDAD = 0.8;
     const FUERZA_SALTO = -25;
     const ANCHO_CANVAS = 1200;
+    const PUNTOS_PARA_GANAR = 1000;
 
     const ALTURA_OBSTACULO = 50;
     const VELOCIDAD_OBSTACULO_DEFAULT = 4;
@@ -325,6 +326,27 @@ function WSServer(io) {
                 nuevoObstaculo.puntuacion = 30;
             }
             juego.obstaculos.push(nuevoObstaculo);
+        }
+        // comprobar fin de partida por puntuación
+        const puntosA = juego.jugadores.A.puntuacion;
+        const puntosB = juego.jugadores.B.puntuacion;
+
+        if (puntosA >= PUNTOS_PARA_GANAR || puntosB >= PUNTOS_PARA_GANAR) {
+            juego.juegoTerminado = true;
+
+            let ganador = "EMPATE";
+            if (puntosA > puntosB) ganador = "A";
+            else if (puntosB > puntosA) ganador = "B";
+
+            io.to(codigo).emit("finPartida", {
+                ganador,
+                puntosA,
+                puntosB
+            });
+
+            clearInterval(juego.intervalo);
+            delete juegos[codigo];
+            return;
         }
 
         io.to(codigo).emit("estadoJuego", juego);

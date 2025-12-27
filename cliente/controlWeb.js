@@ -389,6 +389,46 @@ function ControlWeb() {
             cw.mostrarCrearPartida();
         });
     };
+
+    this.mostrarFinPartida = function (resultado, datos) {
+        this.limpiar();
+
+        let titulo = "🏁 Fin de la partida";
+        let color = "secondary";
+
+        if (resultado === "Has ganado") color = "success";
+        if (resultado === "Has perdido") color = "danger";
+        if (resultado === "Empate") color = "warning";
+
+        let html = `
+    <div class="card border-${color} text-center" style="max-width: 500px; margin: 0 auto;">
+        <div class="card-header bg-${color} text-white">
+            <h3>${titulo}</h3>
+        </div>
+        <div class="card-body">
+            <h4 class="mb-3">${resultado}</h4>
+
+            <p><strong>Puntuaciones finales</strong></p>
+            <p>
+                Jugador A: <strong>${datos.puntosA}</strong><br>
+                Jugador B: <strong>${datos.puntosB}</strong>
+            </p>
+
+            <hr>
+
+            <button id="btnVolverLobby" class="btn btn-primary btn-lg btn-block">
+                Volver al lobby
+            </button>
+        </div>
+    </div>`;
+
+        $("#au").html(html);
+
+        $("#btnVolverLobby").on("click", function () {
+            cw.mostrarCrearPartida();
+        });
+    };
+
     this.mostrarEliminarUsuario = function () {
         this.limpiar();
 

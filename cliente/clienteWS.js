@@ -60,21 +60,14 @@ function ClienteWS() {
             if (cw) cw.mostrarModal("No se pudo iniciar el juego. Código de error: " + datos.razon);
         });
 
-        this.socket.on("jugadorSalto", function (datos) {
-            if (juego) juego.otroJugadorSalta();
-        });
-
         this.socket.on("estadoJuego", function (estado) {
             if (juego) juego.sincronizarEstado(estado);
         });
         this.socket.on("rivalDesconectado", function (datos) {
-            console.log("Rival desconectado:", datos);
-
             if (datos.email === cli.email) return;
+            cli.codigo = undefined;
 
-            if (juego) {
-                juego.juegoTerminado = true;
-            }
+            if (juego) juego.juegoTerminado = true;
 
             if (cw) {
                 cw.mostrarCierrePorAbandono();
@@ -83,8 +76,34 @@ function ClienteWS() {
         this.socket.on("partidaAbandonada", function () {
             if (cw) cw.mostrarCierrePorAbandono();
             if (juego) juego.juegoTerminado = true;
+            cli.codigo = undefined;
+        });
+        this.socket.on("partidaEliminadaPorCreador", function () {
+            if (juego) juego.juegoTerminado = true;
+            if (cw) cw.mostrarModal("La partida fue eliminada por el creador");
+            cli.codigo = undefined;
         });
 
+        this.socket.on("rivalAbandonoAntesInicio", function () {
+            if (cw) cw.mostrarEsperandoRival();
+            cli.codigo = undefined;
+
+        });
+
+        this.socket.on("finPartida", function (datos) {
+            if (juego) juego.juegoTerminado = true;
+
+            const soyCreador = (cli.email === ws.email && juego);
+            let resultado = "Empate";
+
+            if (datos.ganador === "A") {
+                resultado = soyCreador ? "Has ganado" : "Has perdido";
+            } else if (datos.ganador === "B") {
+                resultado = soyCreador ? "Has perdido" : "Has ganado";
+            }
+
+            cw.mostrarFinPartida(resultado, datos);
+        });
 
     };
 
@@ -99,12 +118,15 @@ function ClienteWS() {
     }
 
     this.cancelarPartida = function () {
-        if (this.codigo) {
-            this.socket.emit("cancelarPartida", { "email": this.email, "codigo": this.codigo });
-            console.log("Petición de cancelación enviada.");
-            this.codigo = undefined;
-        }
-    }
+        if (!this.codigo) return;
+
+        const btn = document.getElementById("btnSalirJuego");
+        if (btn) btn.disabled = true;
+
+        this.socket.emit("cancelarPartida");
+    };
+
+
 
     this.iniciarJuego = function () {
         this.socket.emit("iniciarJuego", {
@@ -122,7 +144,7 @@ function ClienteWS() {
     this.ini();
 }
 
-Juego.prototype.sincronizarEstado = function (estado) {
+juego.prototype.sincronizarEstado = function (estado) {
     this.personajeA.y = estado.jugadores.A.y;
     this.personajeA.vy = estado.jugadores.A.vy;
     this.personajeA.saltando = estado.jugadores.A.saltando;
