@@ -169,7 +169,7 @@ function WSServer(io) {
                         };
 
                         juegos[codigo].intervalo = setInterval(() => {
-                            actualizarJuego(codigo, io);
+                            actualizarJuego(codigo, io, juegos);
                         }, 50);
                     });
                 });
@@ -264,7 +264,7 @@ function WSServer(io) {
         });
     };
 
-    function actualizarJuego(codigo, io) {
+    function actualizarJuego(codigo, io, juegos) {
         const juego = juegos[codigo];
         if (!juego || juego.juegoTerminado) return;
 
@@ -300,29 +300,27 @@ function WSServer(io) {
 
         if (Math.random() < 0.02) {
             let randomTipo = Math.random();
-            let velocidadAleatoria = Math.floor(Math.random() * (10 - 4 + 1)) + 4;
-
-            let despegueSuelo = Math.floor(Math.random() * 120);
-            let yAleatoria = (SUELO_Y - 50) - despegueSuelo;
-
             let nuevoObstaculo = {
                 x: ANCHO_CANVAS,
-                y: yAleatoria,
+                y: 0,
                 ancho: 50,
                 alto: 50,
-                velocidad: velocidadAleatoria,
+                velocidad: 6,
                 contadoA: false,
                 contadoB: false
             };
 
             if (randomTipo < 0.60) {
                 nuevoObstaculo.tipo = "obstaculoA";
-                nuevoObstaculo.puntuacion = 15;
+                nuevoObstaculo.y = SUELO_Y - 50;
+                nuevoObstaculo.puntuacion = 10;
             } else if (randomTipo < 0.90) {
                 nuevoObstaculo.tipo = "obstaculoB";
+                nuevoObstaculo.y = SUELO_Y - 80;
                 nuevoObstaculo.puntuacion = 20;
             } else {
                 nuevoObstaculo.tipo = "obstaculoC";
+                nuevoObstaculo.y = SUELO_Y - 120;
                 nuevoObstaculo.puntuacion = 30;
             }
             juego.obstaculos.push(nuevoObstaculo);
