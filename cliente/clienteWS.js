@@ -2,6 +2,7 @@ function ClienteWS() {
     this.socket = undefined;
     this.email = undefined;
     this.codigo = undefined;
+    let juego = null;
 
     this.ini = function () {
         const canvas = document.getElementById("miCanvas");
@@ -48,17 +49,31 @@ function ClienteWS() {
 
         this.socket.on("juegoIniciado", function (datos) {
             console.log("¡Juego iniciado!", datos);
-            let soyJugadorA = (datos.creador === cli.email);
+
+            $("#miModal").modal("hide");
+
             const canvas = document.getElementById("miCanvas");
             canvas.style.display = "block";
-            if (cw) cw.mostrarPantallaJuego(soyJugadorA);
 
+            let soyJugadorA = (datos.creador === cli.email);
+
+            juego = new Juego();
+            juego.iniciar(soyJugadorA);
+
+            if (cw) cw.mostrarPantallaJuego(soyJugadorA);
         });
+
 
         this.socket.on("errorIniciarJuego", function (datos) {
-            console.log("Error al iniciar juego:", datos.razon);
-            if (cw) cw.mostrarModal("No se pudo iniciar el juego. Código de error: " + datos.razon);
+            if (datos.razon === "YA_INICIADA") {
+                console.warn("La partida ya estaba iniciada, ignorando.");
+                return;
+            }
+            if (cw) {
+                cw.mostrarModal("No se pudo iniciar el juego: " + datos.razon);
+            }
         });
+
 
         this.socket.on("estadoJuego", function (estado) {
             if (juego) juego.sincronizarEstado(estado);
@@ -144,18 +159,4 @@ function ClienteWS() {
     this.ini();
 }
 
-juego.prototype.sincronizarEstado = function (estado) {
-    this.personajeA.y = estado.jugadores.A.y;
-    this.personajeA.vy = estado.jugadores.A.vy;
-    this.personajeA.saltando = estado.jugadores.A.saltando;
-    this.personajeA.puntuacion = estado.jugadores.A.puntuacion;
-
-    this.personajeB.y = estado.jugadores.B.y;
-    this.personajeB.vy = estado.jugadores.B.vy;
-    this.personajeB.saltando = estado.jugadores.B.saltando;
-    this.personajeB.puntuacion = estado.jugadores.B.puntuacion;
-
-    this.obstaculos = estado.obstaculos;
-    this.juegoTerminado = estado.juegoTerminado;
-};
 

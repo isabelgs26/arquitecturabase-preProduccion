@@ -260,9 +260,12 @@ function ControlWeb() {
         $("#au").html(html);
 
         if (esCreador) {
-            $("#btnIniciarJuego").click(function () {
+            $("#btnIniciarJuego").show();
+            $("#btnIniciarJuego").on("click", function () {
                 ws.iniciarJuego();
             });
+        } else {
+            $("#btnIniciarJuego").hide();
         }
         $("#btnCancelarPartida").click(function () {
             ws.cancelarPartida(codigo);

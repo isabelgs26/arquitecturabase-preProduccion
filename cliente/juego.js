@@ -221,17 +221,20 @@ function Juego() {
     }
 
     this.sincronizarEstado = function (estado) {
+        if (!estado || !estado.jugadores) return;
+
         this.personajeA = { ...this.personajeA, ...estado.jugadores.A };
         this.personajeB = { ...this.personajeB, ...estado.jugadores.B };
 
         this.obstaculos = estado.obstaculos.map(o => ({
             ...o,
             activo: true,
-            img: this.imgObstaculos[o.tipo]
+            img: this.imgObstaculos[o.tipo] || this.imgObstaculos.obstaculoA
         }));
 
         this.juegoTerminado = estado.juegoTerminado;
-    }
+    };
+
 
 
 
