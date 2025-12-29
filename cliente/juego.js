@@ -76,14 +76,6 @@ function Juego() {
         }
     }
 
-    this.otroJugadorSalta = function () {
-        let otroPersonaje = this.soyJugadorA ? this.personajeB : this.personajeA;
-        if (!otroPersonaje.saltando) {
-            otroPersonaje.saltando = true;
-            otroPersonaje.vy = this.fuerzaSalto;
-        }
-    }
-
     this.actualizar = function () {
         if (this.juegoTerminado) return;
         this.aplicarFisica(this.personajeA);
@@ -148,9 +140,6 @@ function Juego() {
             this.ctx.fillRect(pj.x, pj.y, this.anchoP, this.altoP);
         }
     }
-    this.actualizarObstaculos = function () {
-        // Gestionado por servidor
-    }
 
     this.dibujarObstaculos = function () {
         if (!this.obstaculos) return;
@@ -167,22 +156,35 @@ function Juego() {
         });
     }
 
-    this.verificarColisiones = function () {
-        // Lógica visual local
-    }
 
-    this.mostrarGanador = function () {
-        let mensaje;
-        if (this.personajeA.puntuacion > this.personajeB.puntuacion) {
-            mensaje = `Jugador A gana con ${this.personajeA.puntuacion} puntos!`;
-        } else if (this.personajeB.puntuacion > this.personajeA.puntuacion) {
-            mensaje = `Jugador B gana con ${this.personajeB.puntuacion} puntos!`;
-        } else {
-            mensaje = `Empate! Ambos con ${this.personajeA.puntuacion} puntos`;
+    this.finalizarPartida = function (datos) {
+        this.juegoTerminado = true;
+
+        let ganadorServidor = datos.ganador;
+        let mensaje = "";
+        let yoGano = false;
+
+        if (ganadorServidor === "EMPATE") {
+            mensaje = "Nadie se chocó y tenéis los mismos puntos.";
         }
-        alert(mensaje);
-    }
+        else {
+            if (this.soyJugadorA && ganadorServidor === "A") yoGano = true;
+            if (!this.soyJugadorA && ganadorServidor === "B") yoGano = true;
 
+            if (yoGano) {
+                mensaje = "El rival se chocó o tuviste más puntos.";
+            } else {
+                mensaje = "Te chocaste o tuviste menos puntos.";
+            }
+        }
+
+        // Llamamos a la ventana bonita de ControlWeb
+        if (typeof cw !== 'undefined') {
+            cw.mostrarModalGameOver(yoGano, mensaje, datos.puntosA, datos.puntosB);
+        } else {
+            alert((yoGano ? "GANASTE" : "PERDISTE") + "\n" + mensaje);
+        }
+    }
     this.sincronizarEstado = function (estado) {
         if (!estado || !estado.jugadores) return;
 

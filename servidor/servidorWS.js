@@ -6,12 +6,14 @@ function WSServer(io) {
     const GRAVEDAD = 0.8;
     const FUERZA_SALTO = -20;
     const ANCHO_CANVAS = 1200;
-    const PUNTOS_PARA_GANAR = 1000;
+    const PUNTOS_PARA_GANAR = 2000;
 
     const ALTURA_OBSTACULO = 50;
-    const VELOCIDAD_OBSTACULO_DEFAULT = 5;
+    const VELOCIDAD_INICIAL = 6;
+    const VELOCIDAD_MAXIMA = 16;
+
     let ultimoObstaculo = 0;
-    const TIEMPO_MIN_OBSTACULOS = 1500;
+    const TIEMPO_MIN_OBSTACULOS_BASE = 1500;
 
     this.enviarAlRemitente = function (socket, mensaje, datos) {
         socket.emit(mensaje, datos);
@@ -56,7 +58,6 @@ function WSServer(io) {
                         console.log("WS: Error al crear partida");
                     }
                 });
-
             });
 
             socket.on("unirAPartida", function (datos) {
@@ -92,7 +93,6 @@ function WSServer(io) {
 
                 if (!codigo || !email) return;
 
-                // si el juego ya empezó, no se puede cancelar
                 if (juegos[codigo]) {
                     socket.emit("accionRechazada", {
                         accion: "cancelarPartida",
@@ -103,37 +103,24 @@ function WSServer(io) {
 
                 sistema.obtenerEstadisticasPartida(codigo, function (partida) {
                     if (!partida) return;
-
                     const esCreador = email === partida.creador;
 
                     if (esCreador) {
-                        // Creador sale → eliminar partida
                         sistema.eliminarPartida(codigo, email, function () {
-                            io.to(codigo).emit("partidaCancelada", {
-                                motivo: "CREADOR_SALIO"
-                            });
-
+                            io.to(codigo).emit("partidaCancelada", { motivo: "CREADOR_SALIO" });
                             io.emit("listaPartidas");
                         });
-
                     } else {
-                        // Jugador 2 sale → abandonar partida
                         sistema.salirDePartida(codigo, email, function () {
                             socket.leave(codigo);
                             socket.partidaCodigo = null;
                             socket.email = null;
-
-                            io.to(codigo).emit("rivalSalio", {
-                                email
-                            });
-
+                            io.to(codigo).emit("rivalSalio", { email });
                             socket.emit("salidaConfirmada");
                         });
                     }
                 });
             });
-
-
 
             socket.on("iniciarJuego", function () {
                 const codigo = socket.partidaCodigo;
@@ -168,9 +155,9 @@ function WSServer(io) {
                                 B: { x: 100, y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 }
                             },
                             obstaculos: [],
-                            juegoTerminado: false
+                            juegoTerminado: false,
+                            velocidadActual: VELOCIDAD_INICIAL
                         };
-
 
                         juegos[codigo].intervalo = setInterval(() => {
                             actualizarJuego(codigo, io, juegos);
@@ -179,20 +166,15 @@ function WSServer(io) {
                 });
             });
 
-
             socket.on("saltar", function (datos) {
                 const codigo = socket.partidaCodigo;
                 const email = socket.email;
-
                 if (!codigo || !email) return;
 
                 const juego = juegos[codigo];
-                if (!juego) return;
-
-                if (juego.juegoTerminado) return;
+                if (!juego || juego.juegoTerminado) return;
 
                 const esCreador = email === juego.creador;
-
                 const jugador = esCreador ? 'A' : 'B';
 
                 const pj = juego.jugadores[jugador];
@@ -208,22 +190,12 @@ function WSServer(io) {
             socket.on("abandonarPartida", function () {
                 const codigo = socket.partidaCodigo;
                 const email = socket.email;
-
                 if (!codigo || !email) return;
-
-                // solo tiene sentido si el juego está en curso
                 const juego = juegos[codigo];
                 if (!juego) return;
 
-                console.log(`WS: ${email} abandonó la partida ${codigo}`);
-
                 juego.juegoTerminado = true;
-
-                io.to(codigo).emit("partidaAbandonada", {
-                    email,
-                    codigo
-                });
-
+                io.to(codigo).emit("partidaAbandonada", { email, codigo });
                 clearInterval(juego.intervalo);
                 delete juegos[codigo];
 
@@ -241,24 +213,14 @@ function WSServer(io) {
             socket.on("disconnect", function () {
                 const codigo = socket.partidaCodigo;
                 const email = socket.email;
-
                 if (!codigo || !email) return;
 
-                console.log(`WS: ${email} se desconectó de ${codigo}`);
-
                 if (juegos[codigo]) {
-                    io.to(codigo).emit("partidaAbandonada", {
-                        email,
-                        codigo
-                    });
-
+                    io.to(codigo).emit("partidaAbandonada", { email, codigo });
                     clearInterval(juegos[codigo].intervalo);
                     delete juegos[codigo];
                 } else {
-                    io.to(codigo).emit("rivalDesconectado", {
-                        email,
-                        codigo
-                    });
+                    io.to(codigo).emit("rivalDesconectado", { email, codigo });
                 }
 
                 sistema.eliminarPartida(codigo, email, function () {
@@ -267,8 +229,6 @@ function WSServer(io) {
                     });
                 });
             });
-
-
         });
     };
 
@@ -279,16 +239,19 @@ function WSServer(io) {
         const POSICION_X_JUGADOR_A = 50;
         const POSICION_X_JUGADOR_B = 150;
 
+        // CALCULO VELOCIDAD
+        const maxPuntos = Math.max(juego.jugadores.A.puntuacion, juego.jugadores.B.puntuacion);
+        let nuevaVelocidad = VELOCIDAD_INICIAL + Math.floor(maxPuntos / 300);
+        if (nuevaVelocidad > VELOCIDAD_MAXIMA) nuevaVelocidad = VELOCIDAD_MAXIMA;
+        juego.velocidadActual = nuevaVelocidad;
+
+        // GRAVEDAD JUGADORES
         for (let key of ['A', 'B']) {
             const p = juego.jugadores[key];
-
             p.vy += GRAVEDAD;
             p.y += p.vy;
 
-            if (p.y < 0) {
-                p.y = 0;
-                p.vy = 0;
-            }
+            if (p.y < 0) { p.y = 0; p.vy = 0; }
 
             if (p.y > SUELO_Y) {
                 p.y = SUELO_Y;
@@ -298,10 +261,35 @@ function WSServer(io) {
             }
         }
 
-
-
+        // MOVER OBSTÁCULOS Y DETECTAR COLISIÓN
         for (let o of juego.obstaculos) {
-            o.x -= o.velocidad || 3;
+            o.x -= juego.velocidadActual;
+
+            // --- COLISIÓN JUGADOR A --- 
+            if (hayColision(50, juego.jugadores.A.y, 80, 130, o.x, o.y, 50, 50)) {
+                juego.juegoTerminado = true;
+                io.to(codigo).emit("finPartida", {
+                    ganador: "B",
+                    puntosA: juego.jugadores.A.puntuacion,
+                    puntosB: juego.jugadores.B.puntuacion
+                });
+                clearInterval(juego.intervalo);
+                delete juegos[codigo];
+                return;
+            }
+
+            // --- COLISIÓN JUGADOR B ---
+            if (hayColision(150, juego.jugadores.B.y, 80, 130, o.x, o.y, 50, 50)) {
+                juego.juegoTerminado = true;
+                io.to(codigo).emit("finPartida", {
+                    ganador: "A",
+                    puntosA: juego.jugadores.A.puntuacion,
+                    puntosB: juego.jugadores.B.puntuacion
+                });
+                clearInterval(juego.intervalo);
+                delete juegos[codigo];
+                return;
+            }
 
             if (!o.contadoA && o.x + o.ancho < POSICION_X_JUGADOR_A) {
                 juego.jugadores.A.puntuacion += o.puntuacion;
@@ -316,45 +304,47 @@ function WSServer(io) {
 
         juego.obstaculos = juego.obstaculos.filter(o => o.x + (o.ancho || 50) > -100);
 
+        // GENERAR OBSTÁCULOS
+        const tiempoEspera = Math.max(500, TIEMPO_MIN_OBSTACULOS_BASE - (juego.velocidadActual * 40));
         const ahora = Date.now();
-        if (ahora - ultimoObstaculo > TIEMPO_MIN_OBSTACULOS) {
-            if (Math.random() < 0.03) {
+
+        if (ahora - ultimoObstaculo > tiempoEspera) {
+            if (Math.random() < (0.03 + (juego.velocidadActual * 0.001))) {
                 ultimoObstaculo = ahora;
 
                 let randomTipo = Math.random();
+                const Y_RAS_SUELO = SUELO_Y + 50; // Altura corregida visualmente
+
                 let nuevoObstaculo = {
                     x: ANCHO_CANVAS,
-                    y: 0,
+                    y: Y_RAS_SUELO,
                     ancho: 50,
                     alto: 50,
-                    velocidad: 3,
+                    velocidad: juego.velocidadActual,
                     contadoA: false,
                     contadoB: false
                 };
 
                 if (randomTipo < 0.60) {
                     nuevoObstaculo.tipo = "obstaculoA";
-                    nuevoObstaculo.y = SUELO_Y + 40;
                     nuevoObstaculo.puntuacion = 10;
                 } else if (randomTipo < 0.90) {
                     nuevoObstaculo.tipo = "obstaculoB";
-                    nuevoObstaculo.y = SUELO_Y + 20;
                     nuevoObstaculo.puntuacion = 20;
                 } else {
                     nuevoObstaculo.tipo = "obstaculoC";
-                    nuevoObstaculo.y = SUELO_Y - 40;
                     nuevoObstaculo.puntuacion = 30;
                 }
+
                 juego.obstaculos.push(nuevoObstaculo);
             }
         }
-        // fin de partida por puntuación
+
         const puntosA = juego.jugadores.A.puntuacion;
         const puntosB = juego.jugadores.B.puntuacion;
 
         if (puntosA >= PUNTOS_PARA_GANAR || puntosB >= PUNTOS_PARA_GANAR) {
             juego.juegoTerminado = true;
-
             let ganador = "EMPATE";
             if (puntosA > puntosB) ganador = "A";
             else if (puntosB > puntosA) ganador = "B";
@@ -372,6 +362,17 @@ function WSServer(io) {
 
         io.to(codigo).emit("estadoJuego", juego);
     }
+}
+
+// --- FUNCIÓN DE COLISIÓN (FUERA DE LA CLASE) ---
+function hayColision(pX, pY, pAncho, pAlto, oX, oY, oAncho, oAlto) {
+    const margen = 15; // Margen para ser buena gente
+    return (
+        pX + pAncho - margen > oX + margen &&
+        pX + margen < oX + oAncho - margen &&
+        pY + pAlto - margen > oY + margen &&
+        pY + margen < oY + oAlto - margen
+    );
 }
 
 module.exports.WSServer = WSServer;

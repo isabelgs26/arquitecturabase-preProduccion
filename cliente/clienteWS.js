@@ -105,18 +105,7 @@ function ClienteWS() {
         });
 
         this.socket.on("finPartida", function (datos) {
-            if (juego) juego.juegoTerminado = true;
-
-            const soyCreador = (cli.email === ws.email && juego);
-            let resultado = "Empate";
-
-            if (datos.ganador === "A") {
-                resultado = soyCreador ? "Has ganado" : "Has perdido";
-            } else if (datos.ganador === "B") {
-                resultado = soyCreador ? "Has perdido" : "Has ganado";
-            }
-
-            cw.mostrarFinPartida(resultado, datos);
+            if (juego) juego.finalizarPartida(datos);
         });
 
     };

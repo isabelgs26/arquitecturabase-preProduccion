@@ -393,44 +393,57 @@ function ControlWeb() {
         });
     };
 
-    this.mostrarFinPartida = function (resultado, datos) {
-        this.limpiar();
+    this.mostrarModalGameOver = function (yoGano, mensaje, puntosA, puntosB) {
 
-        let titulo = "🏁 Fin de la partida";
+        let titulo = "RESULTADO";
         let color = "secondary";
 
-        if (resultado === "Has ganado") color = "success";
-        if (resultado === "Has perdido") color = "danger";
-        if (resultado === "Empate") color = "warning";
+        if (yoGano) {
+            titulo = "¡VICTORIA! 🏆";
+            color = "success";
+        } else if (mensaje.includes("EMPATE")) {
+            titulo = "¡EMPATE! 🤝";
+            color = "warning";
+        } else {
+            titulo = "¡DERROTA! 💀";
+            color = "danger";
+        }
 
         let html = `
-    <div class="card border-${color} text-center" style="max-width: 500px; margin: 0 auto;">
-        <div class="card-header bg-${color} text-white">
-            <h3>${titulo}</h3>
-        </div>
-        <div class="card-body">
-            <h4 class="mb-3">${resultado}</h4>
+            <div class="modal fade" id="modalGameOver" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+              <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content text-center border-${color}">
+                  <div class="modal-header justify-content-center bg-${color} text-white">
+                    <h2 class="modal-title font-weight-bold">${titulo}</h2>
+                  </div>
+                  <div class="modal-body">
+                    <h4 class="mb-4 text-dark">${mensaje}</h4>
+                    
+                    <div class="row">
+                      <div class="col-6">
+                        <h5 class="text-primary">Jugador A</h5>
+                        <h3 class="font-weight-bold text-dark">${puntosA}</h3>
+                      </div>
+                      <div class="col-6">
+                        <h5 class="text-warning">Jugador B</h5>
+                        <h3 class="font-weight-bold text-dark">${puntosB}</h3>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-${color} btn-lg" onclick="location.reload()">
+                        VOLVER A JUGAR 🔄
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+        `;
 
-            <p><strong>Puntuaciones finales</strong></p>
-            <p>
-                Jugador A: <strong>${datos.puntosA}</strong><br>
-                Jugador B: <strong>${datos.puntosB}</strong>
-            </p>
+        $("body").append(html);
 
-            <hr>
-
-            <button id="btnVolverLobby" class="btn btn-primary btn-lg btn-block">
-                Volver al lobby
-            </button>
-        </div>
-    </div>`;
-
-        $("#au").html(html);
-
-        $("#btnVolverLobby").on("click", function () {
-            cw.mostrarCrearPartida();
-        });
-    };
+        $("#modalGameOver").modal("show");
+    }
 
     this.mostrarEliminarUsuario = function () {
         this.limpiar();
