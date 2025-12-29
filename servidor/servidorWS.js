@@ -298,7 +298,7 @@ function WSServer(io) {
 
         juego.obstaculos = juego.obstaculos.filter(o => o.x + (o.ancho || 50) > -100);
 
-        if (Math.random() < 0.02) {
+        if (Math.random() < 0.7) {
             let randomTipo = Math.random();
             let nuevoObstaculo = {
                 x: ANCHO_CANVAS,
@@ -323,6 +323,7 @@ function WSServer(io) {
                 nuevoObstaculo.y = SUELO_Y - 120;
                 nuevoObstaculo.puntuacion = 30;
             }
+            console.log("Generando obstáculo: " + nuevoObstaculo.tipo);
             juego.obstaculos.push(nuevoObstaculo);
         }
         // comprobar fin de partida por puntuación

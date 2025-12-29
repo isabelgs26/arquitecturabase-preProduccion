@@ -141,10 +141,13 @@ function Juego() {
         this.ctx.font = "bold 30px Arial";
 
         this.ctx.textAlign = "left";
-        this.ctx.fillText("Jugador A: " + this.personajeA.puntuacion, 30, 50);
 
-        this.ctx.textAlign = "right";
-        this.ctx.fillText("Jugador B: " + this.personajeB.puntuacion, this.ancho - 30, 50);
+        if (this.soyJugadorA) {
+            this.ctx.fillText("Jugador A: " + this.personajeA.puntuacion, 30, 50);
+        } else {
+            this.ctx.fillText("Jugador B: " + this.personajeB.puntuacion, 30, 50);
+        }
+
         this.ctx.restore();
     }
 
@@ -155,13 +158,17 @@ function Juego() {
 
     this.dibujarObstaculos = function () {
         this.obstaculos.forEach(obstaculo => {
-            if (obstaculo.activo) {
-                if (obstaculo.img.complete && obstaculo.img.naturalWidth !== 0) {
-                    this.ctx.drawImage(obstaculo.img, obstaculo.x, obstaculo.y, obstaculo.ancho, obstaculo.alto);
-                } else {
-                    this.ctx.fillStyle = "green";
-                    this.ctx.fillRect(obstaculo.x, obstaculo.y, obstaculo.ancho, obstaculo.alto);
-                }
+            // Verificamos si la imagen existe Y si está cargada
+            if (obstaculo.img && obstaculo.img.complete && obstaculo.img.naturalWidth !== 0) {
+                this.ctx.drawImage(obstaculo.img, obstaculo.x, obstaculo.y, obstaculo.ancho, obstaculo.alto);
+            }
+            // Si no hay imagen o falló la carga, dibujamos un cuadrado de color
+            else {
+                if (obstaculo.tipo === "obstaculoA") this.ctx.fillStyle = "red";
+                else if (obstaculo.tipo === "obstaculoB") this.ctx.fillStyle = "yellow";
+                else this.ctx.fillStyle = "purple"; // Obstáculo C
+
+                this.ctx.fillRect(obstaculo.x, obstaculo.y, obstaculo.ancho, obstaculo.alto);
             }
         });
     }
@@ -221,20 +228,17 @@ function Juego() {
     }
 
     this.sincronizarEstado = function (estado) {
-        if (!estado || !estado.jugadores) return;
-
         this.personajeA = { ...this.personajeA, ...estado.jugadores.A };
         this.personajeB = { ...this.personajeB, ...estado.jugadores.B };
 
         this.obstaculos = estado.obstaculos.map(o => ({
             ...o,
             activo: true,
-            img: this.imgObstaculos[o.tipo] || this.imgObstaculos.obstaculoA
+            img: this.imgObstaculos[o.tipo]
         }));
 
         this.juegoTerminado = estado.juegoTerminado;
-    };
-
+    }
 
 
 
