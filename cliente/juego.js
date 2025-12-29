@@ -2,7 +2,7 @@ function Juego() {
     this.canvas = null;
     this.ctx = null;
     this.ancho = 1200;
-    this.alto = 800;
+    this.alto = 500;
     this.bucle = null;
     this.soyJugadorA = false;
     this.obstaculos = [];
@@ -11,16 +11,14 @@ function Juego() {
     this.anchoP = 80;
     this.altoP = 130;
 
-    // --- FÍSICA CORREGIDA (Para que pisen el suelo) ---
-    this.sueloY = 600;           // Bajamos el suelo a 600
-    this.alturaMaxSalto = 300;
+    this.sueloY = 275;
+    this.alturaMaxSalto = 150;
 
-    this.personajeA = { x: 50, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0 };
-    this.personajeB = { x: 150, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0 };
+    this.personajeA = { x: 100, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 };
+    this.personajeB = { x: 100, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 };
 
-    this.gravedad = 0.4;         // Gravedad baja
-    this.fuerzaSalto = -25;      // Salto potente
-    // --------------------------------------------------
+    this.gravedad = 0.8;
+    this.fuerzaSalto = -20;
 
     // Imágenes
     this.imgPersonajeA = new Image();
@@ -69,9 +67,11 @@ function Juego() {
 
     this.saltar = function () {
         let miPersonaje = this.soyJugadorA ? this.personajeA : this.personajeB;
-        if (!miPersonaje.saltando) {
+
+        if (miPersonaje.contadorSaltos < 2) {
             miPersonaje.saltando = true;
             miPersonaje.vy = this.fuerzaSalto;
+            miPersonaje.contadorSaltos++;
             if (ws) ws.saltar();
         }
     }
@@ -86,7 +86,8 @@ function Juego() {
 
     this.actualizar = function () {
         if (this.juegoTerminado) return;
-
+        this.aplicarFisica(this.personajeA);
+        this.aplicarFisica(this.personajeB);
         this.dibujar();
         this.bucle = requestAnimationFrame(() => this.actualizar());
     }
@@ -100,6 +101,7 @@ function Juego() {
             jugador.y = this.sueloY;
             jugador.vy = 0;
             jugador.saltando = false;
+            jugador.contadorSaltos = 0;
         }
     }
 
@@ -115,18 +117,10 @@ function Juego() {
         }
 
         // Personajes
-        if (this.imgPersonajeA.complete && this.imgPersonajeA.naturalWidth !== 0) {
-            this.ctx.drawImage(this.imgPersonajeA, this.personajeA.x, this.personajeA.y, this.anchoP, this.altoP);
+        if (this.soyJugadorA) {
+            this.dibujarPersonaje(this.personajeA, this.imgPersonajeA, "red");
         } else {
-            this.ctx.fillStyle = "red";
-            this.ctx.fillRect(this.personajeA.x, this.personajeA.y, this.anchoP, this.altoP);
-        }
-
-        if (this.imgPersonajeB.complete && this.imgPersonajeB.naturalWidth !== 0) {
-            this.ctx.drawImage(this.imgPersonajeB, this.personajeB.x, this.personajeB.y, this.anchoP, this.altoP);
-        } else {
-            this.ctx.fillStyle = "blue";
-            this.ctx.fillRect(this.personajeB.x, this.personajeB.y, this.anchoP, this.altoP);
+            this.dibujarPersonaje(this.personajeB, this.imgPersonajeB, "blue");
         }
 
         // Obstáculos
@@ -146,7 +140,14 @@ function Juego() {
 
         this.ctx.restore();
     }
-
+    this.dibujarPersonaje = function (pj, img, colorBackup) {
+        if (img.complete && img.naturalWidth !== 0) {
+            this.ctx.drawImage(img, pj.x, pj.y, this.anchoP, this.altoP);
+        } else {
+            this.ctx.fillStyle = colorBackup;
+            this.ctx.fillRect(pj.x, pj.y, this.anchoP, this.altoP);
+        }
+    }
     this.actualizarObstaculos = function () {
         // Gestionado por servidor
     }
@@ -185,8 +186,18 @@ function Juego() {
     this.sincronizarEstado = function (estado) {
         if (!estado || !estado.jugadores) return;
 
-        this.personajeA = { ...this.personajeA, ...estado.jugadores.A };
-        this.personajeB = { ...this.personajeB, ...estado.jugadores.B };
+        this.personajeA.puntuacion = estado.jugadores.A.puntuacion;
+        this.personajeB.puntuacion = estado.jugadores.B.puntuacion;
+
+        this.personajeA.x = estado.jugadores.A.x;
+        this.personajeB.x = estado.jugadores.B.x;
+
+        if (this.soyJugadorA) {
+            this.personajeB.y = estado.jugadores.B.y;
+        }
+        else {
+            this.personajeA.y = estado.jugadores.A.y;
+        }
 
         this.obstaculos = (estado.obstaculos || []).map(o => ({
             ...o,

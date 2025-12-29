@@ -1,17 +1,15 @@
 function WSServer(io) {
     const juegos = {};
 
-    const ALTURA_PERSONAJE = 130;
-    const SUELO_REAL = 600;
-    const SUELO_Y = SUELO_REAL - ALTURA_PERSONAJE;
+    const SUELO_Y = 275;
 
-    const GRAVEDAD = 0.4;
-    const FUERZA_SALTO = -15;
+    const GRAVEDAD = 0.8;
+    const FUERZA_SALTO = -20;
     const ANCHO_CANVAS = 1200;
     const PUNTOS_PARA_GANAR = 1000;
 
     const ALTURA_OBSTACULO = 50;
-    const VELOCIDAD_OBSTACULO_DEFAULT = 3;
+    const VELOCIDAD_OBSTACULO_DEFAULT = 5;
     let ultimoObstaculo = 0;
     const TIEMPO_MIN_OBSTACULOS = 1500;
 
@@ -166,20 +164,8 @@ function WSServer(io) {
                         juegos[codigo] = {
                             creador: partida.creador,
                             jugadores: {
-                                A: {
-                                    x: 50,
-                                    y: SUELO_Y,
-                                    vy: 0,
-                                    saltando: false,
-                                    puntuacion: 0
-                                },
-                                B: {
-                                    x: 150,
-                                    y: SUELO_Y,
-                                    vy: 0,
-                                    saltando: false,
-                                    puntuacion: 0
-                                }
+                                A: { x: 100, y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 },
+                                B: { x: 100, y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 }
                             },
                             obstaculos: [],
                             juegoTerminado: false
@@ -210,9 +196,13 @@ function WSServer(io) {
                 const jugador = esCreador ? 'A' : 'B';
 
                 const pj = juego.jugadores[jugador];
-                if (!pj || pj.saltando) return;
-                pj.vy = FUERZA_SALTO;
-                pj.saltando = true;
+                if (!pj) return;
+
+                if (pj.contadorSaltos < 2) {
+                    pj.vy = FUERZA_SALTO;
+                    pj.saltando = true;
+                    pj.contadorSaltos++;
+                }
             });
 
             socket.on("abandonarPartida", function () {
@@ -295,9 +285,8 @@ function WSServer(io) {
             p.vy += GRAVEDAD;
             p.y += p.vy;
 
-            const ALTURA_MAX = SUELO_Y - 220;
-            if (p.y < ALTURA_MAX) {
-                p.y = ALTURA_MAX;
+            if (p.y < 0) {
+                p.y = 0;
                 p.vy = 0;
             }
 
@@ -305,6 +294,7 @@ function WSServer(io) {
                 p.y = SUELO_Y;
                 p.vy = 0;
                 p.saltando = false;
+                p.contadorSaltos = 0;
             }
         }
 
@@ -328,35 +318,37 @@ function WSServer(io) {
 
         const ahora = Date.now();
         if (ahora - ultimoObstaculo > TIEMPO_MIN_OBSTACULOS) {
-            ultimoObstaculo = ahora;
+            if (Math.random() < 0.03) {
+                ultimoObstaculo = ahora;
 
-            let randomTipo = Math.random();
-            let nuevoObstaculo = {
-                x: ANCHO_CANVAS,
-                y: 0,
-                ancho: 50,
-                alto: 50,
-                velocidad: 3,
-                contadoA: false,
-                contadoB: false
-            };
+                let randomTipo = Math.random();
+                let nuevoObstaculo = {
+                    x: ANCHO_CANVAS,
+                    y: 0,
+                    ancho: 50,
+                    alto: 50,
+                    velocidad: 3,
+                    contadoA: false,
+                    contadoB: false
+                };
 
-            if (randomTipo < 0.60) {
-                nuevoObstaculo.tipo = "obstaculoA";
-                nuevoObstaculo.y = SUELO_Y - 50;
-                nuevoObstaculo.puntuacion = 10;
-            } else if (randomTipo < 0.90) {
-                nuevoObstaculo.tipo = "obstaculoB";
-                nuevoObstaculo.y = SUELO_Y - 80;
-                nuevoObstaculo.puntuacion = 20;
-            } else {
-                nuevoObstaculo.tipo = "obstaculoC";
-                nuevoObstaculo.y = SUELO_Y - 120;
-                nuevoObstaculo.puntuacion = 30;
+                if (randomTipo < 0.60) {
+                    nuevoObstaculo.tipo = "obstaculoA";
+                    nuevoObstaculo.y = SUELO_Y + 40;
+                    nuevoObstaculo.puntuacion = 10;
+                } else if (randomTipo < 0.90) {
+                    nuevoObstaculo.tipo = "obstaculoB";
+                    nuevoObstaculo.y = SUELO_Y + 20;
+                    nuevoObstaculo.puntuacion = 20;
+                } else {
+                    nuevoObstaculo.tipo = "obstaculoC";
+                    nuevoObstaculo.y = SUELO_Y - 40;
+                    nuevoObstaculo.puntuacion = 30;
+                }
+                juego.obstaculos.push(nuevoObstaculo);
             }
-            juego.obstaculos.push(nuevoObstaculo);
         }
-        // comprobar fin de partida por puntuación
+        // fin de partida por puntuación
         const puntosA = juego.jugadores.A.puntuacion;
         const puntosB = juego.jugadores.B.puntuacion;
 
