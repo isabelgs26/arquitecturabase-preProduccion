@@ -11,15 +11,16 @@ function Juego() {
     this.anchoP = 80;
     this.altoP = 130;
 
-    this.sueloY = 500;
+    // --- FÍSICA CORREGIDA (Para que pisen el suelo) ---
+    this.sueloY = 600;           // Bajamos el suelo a 600
     this.alturaMaxSalto = 300;
 
     this.personajeA = { x: 50, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0 };
     this.personajeB = { x: 150, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0 };
 
-    this.gravedad = 0.4;
-    this.fuerzaSalto = -15;
-
+    this.gravedad = 0.4;         // Gravedad baja
+    this.fuerzaSalto = -25;      // Salto potente
+    // --------------------------------------------------
 
     // Imágenes
     this.imgPersonajeA = new Image();
@@ -54,14 +55,15 @@ function Juego() {
             }
         });
         $("#btnSalirJuego").click(function () {
-            ws.socket.emit("abandonarPartida");
+            if (ws && ws.socket) ws.socket.emit("abandonarPartida");
         });
-
     }
 
     this.iniciar = function (soyA) {
         this.soyJugadorA = soyA;
         if (!this.canvas) this.ini();
+        // Cancelamos bucles anteriores para evitar duplicados
+        if (this.bucle) cancelAnimationFrame(this.bucle);
         this.bucle = requestAnimationFrame(() => this.actualizar());
     }
 
@@ -70,6 +72,7 @@ function Juego() {
         if (!miPersonaje.saltando) {
             miPersonaje.saltando = true;
             miPersonaje.vy = this.fuerzaSalto;
+            if (ws) ws.saltar();
         }
     }
 
@@ -84,14 +87,8 @@ function Juego() {
     this.actualizar = function () {
         if (this.juegoTerminado) return;
 
-        this.aplicarFisica(this.personajeA);
-        this.aplicarFisica(this.personajeB);
-
-        this.actualizarObstaculos();
-        this.verificarColisiones();
-
         this.dibujar();
-        requestAnimationFrame(() => this.actualizar());
+        this.bucle = requestAnimationFrame(() => this.actualizar());
     }
 
     this.aplicarFisica = function (jugador) {
@@ -139,7 +136,6 @@ function Juego() {
         this.ctx.save();
         this.ctx.fillStyle = "black";
         this.ctx.font = "bold 30px Arial";
-
         this.ctx.textAlign = "left";
 
         if (this.soyJugadorA) {
@@ -151,22 +147,19 @@ function Juego() {
         this.ctx.restore();
     }
 
-
     this.actualizarObstaculos = function () {
-        this.obstaculos = this.obstaculos.filter(o => o.activo !== false);
+        // Gestionado por servidor
     }
 
     this.dibujarObstaculos = function () {
+        if (!this.obstaculos) return;
         this.obstaculos.forEach(obstaculo => {
-            // Verificamos si la imagen existe Y si está cargada
             if (obstaculo.img && obstaculo.img.complete && obstaculo.img.naturalWidth !== 0) {
                 this.ctx.drawImage(obstaculo.img, obstaculo.x, obstaculo.y, obstaculo.ancho, obstaculo.alto);
-            }
-            // Si no hay imagen o falló la carga, dibujamos un cuadrado de color
-            else {
+            } else {
                 if (obstaculo.tipo === "obstaculoA") this.ctx.fillStyle = "red";
                 else if (obstaculo.tipo === "obstaculoB") this.ctx.fillStyle = "yellow";
-                else this.ctx.fillStyle = "purple"; // Obstáculo C
+                else this.ctx.fillStyle = "purple";
 
                 this.ctx.fillRect(obstaculo.x, obstaculo.y, obstaculo.ancho, obstaculo.alto);
             }
@@ -174,45 +167,7 @@ function Juego() {
     }
 
     this.verificarColisiones = function () {
-        for (let obstaculo of this.obstaculos) {
-            if (!obstaculo.activo) continue;
-
-            // Colisión jugador A
-            if (!this.juegoTerminado &&
-                this.personajeA.x < obstaculo.x + obstaculo.ancho &&
-                this.personajeA.x + this.anchoP > obstaculo.x &&
-                this.personajeA.y < obstaculo.y + obstaculo.alto &&
-                this.personajeA.y + this.altoP > obstaculo.y
-            ) {
-                this.juegoTerminado = true;
-            }
-
-            // Colisión jugador B
-            if (!this.juegoTerminado &&
-                this.personajeB.x < obstaculo.x + obstaculo.ancho &&
-                this.personajeB.x + this.anchoP > obstaculo.x &&
-                this.personajeB.y < obstaculo.y + obstaculo.alto &&
-                this.personajeB.y + this.altoP > obstaculo.y
-            ) {
-                this.juegoTerminado = true;
-            }
-
-            // Puntuación jugador A
-            if (!obstaculo.esquivadoA && this.personajeA.x > obstaculo.x + obstaculo.ancho) {
-                this.personajeA.puntuacion += obstaculo.puntuacion;
-                obstaculo.esquivadoA = true;
-            }
-
-            // Puntuación jugador B
-            if (!obstaculo.esquivadoB && this.personajeB.x > obstaculo.x + obstaculo.ancho) {
-                this.personajeB.puntuacion += obstaculo.puntuacion;
-                obstaculo.esquivadoB = true;
-            }
-        }
-
-        if (this.juegoTerminado) {
-            setTimeout(() => this.mostrarGanador(), 100);
-        }
+        // Lógica visual local
     }
 
     this.mostrarGanador = function () {
@@ -228,10 +183,12 @@ function Juego() {
     }
 
     this.sincronizarEstado = function (estado) {
+        if (!estado || !estado.jugadores) return;
+
         this.personajeA = { ...this.personajeA, ...estado.jugadores.A };
         this.personajeB = { ...this.personajeB, ...estado.jugadores.B };
 
-        this.obstaculos = estado.obstaculos.map(o => ({
+        this.obstaculos = (estado.obstaculos || []).map(o => ({
             ...o,
             activo: true,
             img: this.imgObstaculos[o.tipo]
@@ -239,7 +196,4 @@ function Juego() {
 
         this.juegoTerminado = estado.juegoTerminado;
     }
-
-
-
 }

@@ -2,7 +2,6 @@ function ClienteWS() {
     this.socket = undefined;
     this.email = undefined;
     this.codigo = undefined;
-    let juego = null;
 
     this.ini = function () {
         const canvas = document.getElementById("miCanvas");

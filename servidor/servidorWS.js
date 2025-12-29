@@ -1,14 +1,19 @@
 function WSServer(io) {
     const juegos = {};
 
-    const SUELO_Y = 500;
-    const GRAVEDAD = 0.8;
-    const FUERZA_SALTO = -25;
+    const ALTURA_PERSONAJE = 130;
+    const SUELO_REAL = 600;
+    const SUELO_Y = SUELO_REAL - ALTURA_PERSONAJE;
+
+    const GRAVEDAD = 0.4;
+    const FUERZA_SALTO = -15;
     const ANCHO_CANVAS = 1200;
     const PUNTOS_PARA_GANAR = 1000;
 
     const ALTURA_OBSTACULO = 50;
-    const VELOCIDAD_OBSTACULO_DEFAULT = 4;
+    const VELOCIDAD_OBSTACULO_DEFAULT = 3;
+    let ultimoObstaculo = 0;
+    const TIEMPO_MIN_OBSTACULOS = 1500;
 
     this.enviarAlRemitente = function (socket, mensaje, datos) {
         socket.emit(mensaje, datos);
@@ -161,16 +166,29 @@ function WSServer(io) {
                         juegos[codigo] = {
                             creador: partida.creador,
                             jugadores: {
-                                A: { y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0 },
-                                B: { y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0 }
+                                A: {
+                                    x: 50,
+                                    y: SUELO_Y,
+                                    vy: 0,
+                                    saltando: false,
+                                    puntuacion: 0
+                                },
+                                B: {
+                                    x: 150,
+                                    y: SUELO_Y,
+                                    vy: 0,
+                                    saltando: false,
+                                    puntuacion: 0
+                                }
                             },
                             obstaculos: [],
                             juegoTerminado: false
                         };
 
+
                         juegos[codigo].intervalo = setInterval(() => {
                             actualizarJuego(codigo, io, juegos);
-                        }, 50);
+                        }, 17);
                     });
                 });
             });
@@ -273,17 +291,27 @@ function WSServer(io) {
 
         for (let key of ['A', 'B']) {
             const p = juego.jugadores[key];
+
             p.vy += GRAVEDAD;
             p.y += p.vy;
-            if (p.y >= SUELO_Y) {
+
+            const ALTURA_MAX = SUELO_Y - 220;
+            if (p.y < ALTURA_MAX) {
+                p.y = ALTURA_MAX;
+                p.vy = 0;
+            }
+
+            if (p.y > SUELO_Y) {
                 p.y = SUELO_Y;
                 p.vy = 0;
                 p.saltando = false;
             }
         }
 
+
+
         for (let o of juego.obstaculos) {
-            o.x -= o.velocidad || 4;
+            o.x -= o.velocidad || 3;
 
             if (!o.contadoA && o.x + o.ancho < POSICION_X_JUGADOR_A) {
                 juego.jugadores.A.puntuacion += o.puntuacion;
@@ -298,14 +326,17 @@ function WSServer(io) {
 
         juego.obstaculos = juego.obstaculos.filter(o => o.x + (o.ancho || 50) > -100);
 
-        if (Math.random() < 0.7) {
+        const ahora = Date.now();
+        if (ahora - ultimoObstaculo > TIEMPO_MIN_OBSTACULOS) {
+            ultimoObstaculo = ahora;
+
             let randomTipo = Math.random();
             let nuevoObstaculo = {
                 x: ANCHO_CANVAS,
                 y: 0,
                 ancho: 50,
                 alto: 50,
-                velocidad: 6,
+                velocidad: 3,
                 contadoA: false,
                 contadoB: false
             };
@@ -323,7 +354,6 @@ function WSServer(io) {
                 nuevoObstaculo.y = SUELO_Y - 120;
                 nuevoObstaculo.puntuacion = 30;
             }
-            console.log("Generando obstáculo: " + nuevoObstaculo.tipo);
             juego.obstaculos.push(nuevoObstaculo);
         }
         // comprobar fin de partida por puntuación
