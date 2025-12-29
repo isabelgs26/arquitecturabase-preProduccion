@@ -11,7 +11,7 @@ function Juego() {
     this.anchoP = 80;
     this.altoP = 130;
 
-    this.sueloY = 275;
+    this.sueloY = 350;
     this.alturaMaxSalto = 150;
 
     this.personajeA = { x: 100, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 };
@@ -27,8 +27,11 @@ function Juego() {
     this.imgPersonajeB = new Image();
     this.imgPersonajeB.src = "img/personajeB.png";
 
-    this.imgFondo = new Image();
-    this.imgFondo.src = "img/paisajeJuego.png";
+    this.videoFondo = document.createElement("video");
+    this.videoFondo.src = "video/fondo.mp4";
+    this.videoFondo.muted = true;
+    this.videoFondo.loop = true;
+    this.videoFondo.setAttribute("playsinline", "");
 
     // Obstáculos precargados
     this.imgObstaculos = {
@@ -70,6 +73,8 @@ function Juego() {
 
         this.musicaFondo.currentTime = 0;
         this.musicaFondo.play().catch(e => console.log("Haz click en la web para activar audio"));
+
+        this.videoFondo.play().catch(e => console.log("Error video fondo:", e));
 
         if (this.bucle) cancelAnimationFrame(this.bucle);
         this.bucle = requestAnimationFrame(() => this.actualizar());
@@ -116,13 +121,9 @@ function Juego() {
         this.ctx.fillStyle = "#87CEEB";
         this.ctx.fillRect(0, 0, this.ancho, this.alto);
 
-        if (this.imgFondo.complete && this.imgFondo.naturalWidth !== 0) {
-            this.ctx.save();
-            this.ctx.globalAlpha = 0.5;
-            this.ctx.drawImage(this.imgFondo, 0, 0, this.ancho, this.alto);
-            this.ctx.restore();
+        if (this.videoFondo.readyState >= 2) {
+            this.ctx.drawImage(this.videoFondo, 0, 0, this.ancho, this.alto);
         }
-
         // Personajes
         if (this.soyJugadorA) {
             this.dibujarPersonaje(this.personajeA, this.imgPersonajeA, "red");
@@ -158,24 +159,30 @@ function Juego() {
 
     this.dibujarObstaculos = function () {
         if (!this.obstaculos) return;
+        let ajusteAltura = 35;
+
+        let sueloReal = this.sueloY + this.altoP;
+
         this.obstaculos.forEach(obstaculo => {
+            let yAjustada = (sueloReal - obstaculo.alto) - ajusteAltura;
+
             if (obstaculo.img && obstaculo.img.complete && obstaculo.img.naturalWidth !== 0) {
-                this.ctx.drawImage(obstaculo.img, obstaculo.x, obstaculo.y, obstaculo.ancho, obstaculo.alto);
+                this.ctx.drawImage(obstaculo.img, obstaculo.x, yAjustada, obstaculo.ancho, obstaculo.alto);
             } else {
                 if (obstaculo.tipo === "obstaculoA") this.ctx.fillStyle = "red";
                 else if (obstaculo.tipo === "obstaculoB") this.ctx.fillStyle = "yellow";
                 else this.ctx.fillStyle = "purple";
 
-                this.ctx.fillRect(obstaculo.x, obstaculo.y, obstaculo.ancho, obstaculo.alto);
+                this.ctx.fillRect(obstaculo.x, yAjustada, obstaculo.ancho, obstaculo.alto);
             }
         });
     }
-
 
     this.finalizarPartida = function (datos) {
         this.juegoTerminado = true;
 
         this.musicaFondo.pause();
+        this.videoFondo.pause();
         if (datos.puntosA < 2000 && datos.puntosB < 2000) {
             this.sonidoCrash.play();
         }

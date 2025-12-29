@@ -1,7 +1,7 @@
 function WSServer(io) {
     const juegos = {};
 
-    const SUELO_Y = 275;
+    const SUELO_Y = 350;
 
     const GRAVEDAD = 0.8;
     const FUERZA_SALTO = -20;
