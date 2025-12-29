@@ -40,6 +40,13 @@ function Juego() {
     this.imgObstaculos.obstaculoB.src = "img/obstaculoB.png";
     this.imgObstaculos.obstaculoC.src = "img/obstaculoC.png";
 
+    this.sonidoSalto = new Audio("audio/salto.mp3");
+    this.sonidoCrash = new Audio("audio/crash.mp3");
+    this.musicaFondo = new Audio("audio/musica.mp3");
+
+    this.musicaFondo.loop = true;
+    this.musicaFondo.volume = 0.2;
+
     this.ini = function () {
         this.canvas = document.getElementById("miCanvas");
         this.canvas.width = this.ancho;
@@ -60,7 +67,10 @@ function Juego() {
     this.iniciar = function (soyA) {
         this.soyJugadorA = soyA;
         if (!this.canvas) this.ini();
-        // Cancelamos bucles anteriores para evitar duplicados
+
+        this.musicaFondo.currentTime = 0;
+        this.musicaFondo.play().catch(e => console.log("Haz click en la web para activar audio"));
+
         if (this.bucle) cancelAnimationFrame(this.bucle);
         this.bucle = requestAnimationFrame(() => this.actualizar());
     }
@@ -72,6 +82,11 @@ function Juego() {
             miPersonaje.saltando = true;
             miPersonaje.vy = this.fuerzaSalto;
             miPersonaje.contadorSaltos++;
+
+            // SONIDO SALTO
+            this.sonidoSalto.currentTime = 0; // Reiniciar por si salta muy seguido
+            this.sonidoSalto.play();
+
             if (ws) ws.saltar();
         }
     }
@@ -160,6 +175,10 @@ function Juego() {
     this.finalizarPartida = function (datos) {
         this.juegoTerminado = true;
 
+        this.musicaFondo.pause();
+        if (datos.puntosA < 2000 && datos.puntosB < 2000) {
+            this.sonidoCrash.play();
+        }
         let ganadorServidor = datos.ganador;
         let mensaje = "";
         let yoGano = false;
