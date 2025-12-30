@@ -236,8 +236,8 @@ function WSServer(io) {
         const juego = juegos[codigo];
         if (!juego || juego.juegoTerminado) return;
 
-        const POSICION_X_JUGADOR_A = 50;
-        const POSICION_X_JUGADOR_B = 150;
+        const POSICION_X_JUGADOR_A = 100;
+        const POSICION_X_JUGADOR_B = 100;
 
         // CALCULO VELOCIDAD
         const maxPuntos = Math.max(juego.jugadores.A.puntuacion, juego.jugadores.B.puntuacion);
@@ -252,7 +252,6 @@ function WSServer(io) {
             p.y += p.vy;
 
             if (p.y < 0) { p.y = 0; p.vy = 0; }
-
             if (p.y > SUELO_Y) {
                 p.y = SUELO_Y;
                 p.vy = 0;
@@ -261,45 +260,55 @@ function WSServer(io) {
             }
         }
 
+        let haChocadoA = false;
+        let haChocadoB = false;
+
         // MOVER OBSTÁCULOS Y DETECTAR COLISIÓN
         for (let o of juego.obstaculos) {
             o.x -= juego.velocidadActual;
 
-            // --- COLISIÓN JUGADOR A --- 
-            if (hayColision(50, juego.jugadores.A.y, 80, 130, o.x, o.y, 50, 50)) {
-                juego.juegoTerminado = true;
-                io.to(codigo).emit("finPartida", {
-                    ganador: "B",
-                    puntosA: juego.jugadores.A.puntuacion,
-                    puntosB: juego.jugadores.B.puntuacion
-                });
-                clearInterval(juego.intervalo);
-                delete juegos[codigo];
-                return;
+            if (hayColision(POSICION_X_JUGADOR_A, juego.jugadores.A.y, 80, 130, o.x, o.y, 50, 50)) {
+                haChocadoA = true;
             }
 
-            // --- COLISIÓN JUGADOR B ---
-            if (hayColision(150, juego.jugadores.B.y, 80, 130, o.x, o.y, 50, 50)) {
-                juego.juegoTerminado = true;
-                io.to(codigo).emit("finPartida", {
-                    ganador: "A",
-                    puntosA: juego.jugadores.A.puntuacion,
-                    puntosB: juego.jugadores.B.puntuacion
-                });
-                clearInterval(juego.intervalo);
-                delete juegos[codigo];
-                return;
+            if (hayColision(POSICION_X_JUGADOR_B, juego.jugadores.B.y, 80, 130, o.x, o.y, 50, 50)) {
+                haChocadoB = true;
             }
 
+            // CONTAR PUNTOS
             if (!o.contadoA && o.x + o.ancho < POSICION_X_JUGADOR_A) {
                 juego.jugadores.A.puntuacion += o.puntuacion;
                 o.contadoA = true;
             }
-
             if (!o.contadoB && o.x + o.ancho < POSICION_X_JUGADOR_B) {
                 juego.jugadores.B.puntuacion += o.puntuacion;
                 o.contadoB = true;
             }
+        }
+
+        if (haChocadoA || haChocadoB) {
+            juego.juegoTerminado = true;
+            let ganador = "";
+
+            if (haChocadoA && haChocadoB) {
+                // ¡LOS DOS SE HAN CHOCADO!
+                ganador = "EMPATE";
+            } else if (haChocadoA) {
+                // Solo A se chocó
+                ganador = "B";
+            } else if (haChocadoB) {
+                // Solo B se chocó
+                ganador = "A";
+            }
+
+            io.to(codigo).emit("finPartida", {
+                ganador: ganador,
+                puntosA: juego.jugadores.A.puntuacion,
+                puntosB: juego.jugadores.B.puntuacion
+            });
+            clearInterval(juego.intervalo);
+            delete juegos[codigo];
+            return;
         }
 
         juego.obstaculos = juego.obstaculos.filter(o => o.x + (o.ancho || 50) > -100);
@@ -311,35 +320,22 @@ function WSServer(io) {
         if (ahora - ultimoObstaculo > tiempoEspera) {
             if (Math.random() < (0.03 + (juego.velocidadActual * 0.001))) {
                 ultimoObstaculo = ahora;
-
                 let randomTipo = Math.random();
-                const Y_RAS_SUELO = SUELO_Y + 50; // Altura corregida visualmente
-
+                const Y_RAS_SUELO = SUELO_Y + 50;
                 let nuevoObstaculo = {
-                    x: ANCHO_CANVAS,
-                    y: Y_RAS_SUELO,
-                    ancho: 50,
-                    alto: 50,
-                    velocidad: juego.velocidadActual,
-                    contadoA: false,
-                    contadoB: false
+                    x: ANCHO_CANVAS, y: Y_RAS_SUELO, ancho: 50, alto: 50,
+                    velocidad: juego.velocidadActual, contadoA: false, contadoB: false
                 };
 
-                if (randomTipo < 0.60) {
-                    nuevoObstaculo.tipo = "obstaculoA";
-                    nuevoObstaculo.puntuacion = 10;
-                } else if (randomTipo < 0.90) {
-                    nuevoObstaculo.tipo = "obstaculoB";
-                    nuevoObstaculo.puntuacion = 20;
-                } else {
-                    nuevoObstaculo.tipo = "obstaculoC";
-                    nuevoObstaculo.puntuacion = 30;
-                }
+                if (randomTipo < 0.60) { nuevoObstaculo.tipo = "obstaculoA"; nuevoObstaculo.puntuacion = 10; }
+                else if (randomTipo < 0.90) { nuevoObstaculo.tipo = "obstaculoB"; nuevoObstaculo.puntuacion = 20; }
+                else { nuevoObstaculo.tipo = "obstaculoC"; nuevoObstaculo.puntuacion = 30; }
 
                 juego.obstaculos.push(nuevoObstaculo);
             }
         }
 
+        // FINALIZAR POR PUNTOS
         const puntosA = juego.jugadores.A.puntuacion;
         const puntosB = juego.jugadores.B.puntuacion;
 
@@ -349,12 +345,7 @@ function WSServer(io) {
             if (puntosA > puntosB) ganador = "A";
             else if (puntosB > puntosA) ganador = "B";
 
-            io.to(codigo).emit("finPartida", {
-                ganador,
-                puntosA,
-                puntosB
-            });
-
+            io.to(codigo).emit("finPartida", { ganador, puntosA, puntosB });
             clearInterval(juego.intervalo);
             delete juegos[codigo];
             return;
@@ -364,9 +355,8 @@ function WSServer(io) {
     }
 }
 
-// --- FUNCIÓN DE COLISIÓN (FUERA DE LA CLASE) ---
 function hayColision(pX, pY, pAncho, pAlto, oX, oY, oAncho, oAlto) {
-    const margen = 15; // Margen para ser buena gente
+    const margen = 5;
     return (
         pX + pAncho - margen > oX + margen &&
         pX + margen < oX + oAncho - margen &&

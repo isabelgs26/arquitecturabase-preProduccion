@@ -20,6 +20,8 @@ function Juego() {
     this.gravedad = 0.8;
     this.fuerzaSalto = -20;
 
+    this.particulas = []; //efectos visuales
+
     // Imágenes
     this.imgPersonajeA = new Image();
     this.imgPersonajeA.src = "img/personajeA.png";
@@ -62,6 +64,14 @@ function Juego() {
                 juego.saltar();
             }
         });
+        this.canvas.addEventListener("mousedown", function () {
+            juego.saltar();
+        });
+
+        this.canvas.addEventListener("touchstart", function (e) {
+            e.preventDefault();
+        }, { passive: false });
+
         $("#btnSalirJuego").click(function () {
             if (ws && ws.socket) ws.socket.emit("abandonarPartida");
         });
@@ -92,6 +102,11 @@ function Juego() {
             this.sonidoSalto.currentTime = 0; // Reiniciar por si salta muy seguido
             this.sonidoSalto.play();
 
+            // EFECTO VISUAL
+            let piesX = miPersonaje.x + this.anchoP / 2;
+            let piesY = this.sueloY + this.altoP;
+            this.crearPolvo(piesX, piesY);
+
             if (ws) ws.saltar();
         }
     }
@@ -109,7 +124,15 @@ function Juego() {
             jugador.vy += this.gravedad;
             jugador.y += jugador.vy;
         }
+
+
         if (jugador.y >= this.sueloY) {
+            if (jugador.vy > 0) {
+                let piesX = jugador.x + this.anchoP / 2;
+                let piesY = this.sueloY + this.altoP;
+                this.crearPolvo(piesX, piesY);
+            }
+
             jugador.y = this.sueloY;
             jugador.vy = 0;
             jugador.saltando = false;
@@ -133,6 +156,9 @@ function Juego() {
 
         // Obstáculos
         this.dibujarObstaculos();
+
+        // Efectos visuales
+        this.gestionarParticulas();
 
         // Puntuaciones
         this.ctx.save();
@@ -183,6 +209,7 @@ function Juego() {
 
         this.musicaFondo.pause();
         this.videoFondo.pause();
+
         if (datos.puntosA < 2000 && datos.puntosB < 2000) {
             this.sonidoCrash.play();
         }
@@ -190,10 +217,21 @@ function Juego() {
         let mensaje = "";
         let yoGano = false;
 
+        //Terminar por colisión
+        let huboChoque = (datos.puntosA < 2000 && datos.puntosB < 2000);
+        if (huboChoque) {
+            this.sonidoCrash.play();
+        }
+
         if (ganadorServidor === "EMPATE") {
-            mensaje = "Nadie se chocó y tenéis los mismos puntos.";
+            if (huboChoque) {
+                mensaje = "¡Vaya tortazo! Los dos os habéis chocado a la vez.";
+            } else {
+                mensaje = "¡Increíble! Empate sin choques.";
+            }
         }
         else {
+            //Terminar por puntos -- ganador A o B
             if (this.soyJugadorA && ganadorServidor === "A") yoGano = true;
             if (!this.soyJugadorA && ganadorServidor === "B") yoGano = true;
 
@@ -234,5 +272,39 @@ function Juego() {
         }));
 
         this.juegoTerminado = estado.juegoTerminado;
+    }
+
+    // Efectos visuales: polvo al chocar con obstáculo
+    this.crearPolvo = function (x, y) {
+        for (let i = 0; i < 10; i++) {
+            this.particulas.push({
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 4,
+                vy: Math.random() * -3,
+                vida: 30 + Math.random() * 20,
+                tamano: 5 + Math.random() * 5,
+                color: "white"
+            });
+        }
+    }
+
+    this.gestionarParticulas = function () {
+        for (let i = this.particulas.length - 1; i >= 0; i--) {
+            let p = this.particulas[i];
+
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vida--;
+            p.tamano *= 0.95;
+            this.ctx.fillStyle = p.color;
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, Math.max(0, p.tamano), 0, Math.PI * 2);
+            this.ctx.fill();
+
+            if (p.vida <= 0 || p.tamano < 0.5) {
+                this.particulas.splice(i, 1);
+            }
+        }
     }
 }
