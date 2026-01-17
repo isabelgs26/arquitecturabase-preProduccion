@@ -1,8 +1,8 @@
 # 🏃‍♂️ Mr. Dash - Arquitectura SaaS
 ## 👥 Autores
 
-* **María Isabel García Sánchez** - *Desarrollo y Documentación* - [TuGitHub](https://github.com/isabelgs26)
-* **Asignatura:** Procesos de Ingeniería del Software (2023-2024)
+* **María Isabel García Sánchez** - *Desarrollo y Documentación* - [GitHub](https://github.com/isabelgs26)
+* **Asignatura:** Procesos de Ingeniería del Software (2025-2026)
 * **Universidad:** Universidad de Castilla-La Mancha (UCLM)
 
 **Mr. Dash** es una plataforma de juegos web multijugador en tiempo real. Este proyecto implementa una arquitectura SaaS (Software as a Service) escalable, desarrollada como parte de la asignatura **Procesos de Ingeniería del Software**.
@@ -31,3 +31,4 @@ El sistema permite a los usuarios registrarse, iniciar sesión y competir en par
 * **Backend:** Node.js, Express, Socket.IO, MongoDB Atlas.
 * **Frontend:** HTML5, Bootstrap 4, jQuery, Socket.IO Client.
 * **Calidad y DevOps:** Playwright (E2E), Google Cloud Platform, GitHub Actions.
+
