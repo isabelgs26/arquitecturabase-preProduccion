@@ -21,8 +21,37 @@ function Sistema(objConfig = {}) {
 
     this.obtenerCodigo = () => Math.floor(Math.random() * 900000 + 100000).toString();
 
+    // Método para agregar usuario en modo TEST
+    this.agregarUsuario = function (usr) {
+        if (this.test && typeof usr === 'object' && usr.nick && usr.email) {
+            this.usuarios[usr.email] = usr;
+            return usr;
+        }
+        return null;
+    };
 
     this.crearPartida = function (email, callback) {
+        // Modo TEST: retorna directamente sin callback
+        if (this.test && !callback) {
+            let usr = this.usuarios[email];
+            if (usr) {
+                let codigo = this.obtenerCodigo();
+                let partida = {
+                    codigo: codigo,
+                    jugadores: [usr],
+                    maxJug: 2,
+                    creador: email,
+                    fechaCreacion: new Date(),
+                    estado: "incompleta",
+                    puntuaciones: {}
+                };
+                this.partidas[codigo] = partida;
+                return codigo;
+            }
+            return -1;
+        }
+
+        // Modo NORMAL: usa callback
         let modelo = this;
         this.cad.buscarUsuario({ "email": email }, function (usr) {
             if (usr) {
@@ -33,7 +62,7 @@ function Sistema(objConfig = {}) {
                     maxJug: 2,
                     creador: email,
                     fechaCreacion: new Date(),
-                    estado: "incompleta", // "incompleta", "en juego", "finalizada"
+                    estado: "incompleta",
                     puntuaciones: {}
                 };
                 modelo.cad.insertarPartida(partida, function (resultado) {
@@ -53,14 +82,33 @@ function Sistema(objConfig = {}) {
                 callback(-1);
             }
         });
-
-    }
+    };
 
 
 
     this.unirAPartida = function (email, codigo, callback) {
-        let modelo = this;
+        // Modo TEST: retorna directamente sin callback
+        if (this.test && !callback) {
+            let partida = this.partidas[codigo];
+            if (!partida) return -1;
+            if (partida.jugadores.length >= partida.maxJug) return -1;
 
+            let usr = this.usuarios[email];
+            if (!usr) return -1;
+
+            partida.jugadores.push(usr);
+            if (partida.jugadores.length >= partida.maxJug) {
+                partida.estado = "completa";
+                partida.puntuaciones = {};
+                partida.jugadores.forEach(j => {
+                    partida.puntuaciones[j.email] = 0;
+                });
+            }
+            return codigo;
+        }
+
+        // Modo NORMAL: usa callback
+        let modelo = this;
         this.cad.obtenerPartida(codigo, function (partidaBD) {
             if (!partidaBD) {
                 callback(-1);
@@ -107,11 +155,28 @@ function Sistema(objConfig = {}) {
                 });
             });
         });
-    }
+    };
 
     this.obtenerPartidasDisponibles = function (callback) {
-        let modelo = this;
+        // Modo TEST: retorna directamente sin callback
+        if (this.test && !callback) {
+            let disponibles = [];
+            for (let codigo in this.partidas) {
+                let partida = this.partidas[codigo];
+                if (partida.estado === "incompleta") {
+                    disponibles.push({
+                        codigo: codigo,
+                        creador: partida.creador,
+                        jugadoresActuales: partida.jugadores.length,
+                        maxJugadores: partida.maxJug
+                    });
+                }
+            }
+            return disponibles;
+        }
 
+        // Modo NORMAL: usa callback
+        let modelo = this;
         this.cad.obtenerPartidasDisponibles(function (partidasBD) {
             let lista = [];
             partidasBD.forEach(function (partida) {
