@@ -42,7 +42,8 @@
     <div class="container">
         <div id="au"></div>
 
-        <div id="juego" style="display:none; position:relative; width:1200px; margin:0 auto;">
+        <div id="juego"
+            style="display:none; position:relative; width:100%; max-width:1200px; margin:0 auto; padding:0 10px;">
 
             <div id="overlayMensaje" style="
                 display:none;
@@ -81,6 +82,9 @@
                 background-color:#87CEEB;
                 box-shadow: 0 10px 30px rgba(0,0,0,0.5);
                 display: block;
+                width: 100%;
+                height: auto;
+                max-width: 100%;
             ">
             </canvas>
         </div>
@@ -138,33 +142,38 @@
         $(document).ready(function () {
             ini();
 
-            // Inicializar Google One Tap solo si el elemento existe
+            // Canvas responsive
+            const canvas = document.getElementById('miCanvas');
+            const juegoDiv = document.getElementById('juego');
+
+            function ajustarCanvasResponsivo() {
+                if (canvas && juegoDiv) {
+                    const ancho = juegoDiv.clientWidth;
+                    const ratio = canvas.width / canvas.height;
+                    canvas.style.width = '100%';
+                    canvas.style.height = 'auto';
+                }
+            }
+
+            window.addEventListener('resize', ajustarCanvasResponsivo);
+            ajustarCanvasResponsivo();
+
+            // Inicializar Google One Tap
             const onLoadDiv = document.getElementById('g_id_onload');
             if (onLoadDiv && window.google && window.google.accounts && window.google.accounts.id) {
                 const clientId = onLoadDiv.getAttribute('data-client_id');
                 const loginUri = onLoadDiv.getAttribute('data-login_uri');
 
-                // Solo inicializar si tenemos los datos válidos
                 if (clientId && clientId !== 'GOOGLE_CLIENT_ID_PLACEHOLDER' && loginUri && loginUri !== 'DATA_LOGIN_URI_PLACEHOLDER') {
-                    try {
-                        window.google.accounts.id.initialize({
-                            client_id: clientId,
-                            callback: handleOneTapSignIn,
-                            auto_select: false,
-                            cancel_on_tap_outside: true
-                        });
+                    window.google.accounts.id.initialize({
+                        client_id: clientId,
+                        callback: handleOneTapSignIn,
+                        auto_select: false,
+                        cancel_on_tap_outside: false
+                    });
 
-                        // Mostrar el prompt con mejor manejo de errores
-                        window.google.accounts.id.prompt((notification) => {
-                            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                                console.log("One Tap no se mostró o fue saltado");
-                            } else if (notification.isDismissedMoment()) {
-                                console.log("One Tap fue cerrado por el usuario");
-                            }
-                        });
-                    } catch (error) {
-                        console.warn("Error inicializando Google One Tap:", error);
-                    }
+                    // Mostrar One Tap siempre
+                    window.google.accounts.id.prompt();
                 }
             }
         });
@@ -204,6 +213,5 @@
         }
     </script>
 </body>
-
 
 </html>
