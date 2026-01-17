@@ -8,8 +8,7 @@ function ControlWeb() {
         if (nick) {
             cw.mostrarHome(nick);
             if (!ws.email) {
-                let email = $.cookie("email");
-                ws.email = email;
+                ws.email = $.cookie("email");
             }
         } else {
             cw.mostrarAcceso();
@@ -109,6 +108,7 @@ function ControlWeb() {
         $("#menuGestion").show();
         $("#cerrarSesionItem").show();
         $(".nav-item").first().hide();
+
     };
 
     this.ocultarBotonCerrarSesion = function () {
@@ -184,7 +184,7 @@ function ControlWeb() {
     this.mostrarEsperandoRival = function () {
         this.limpiar();
 
-        let codigoStr = (ws && ws.codigo) ? ws.codigo : '...';
+        let codigoStr = ws.codigo || '...';
 
         let html = `
         <div class="card mt-4 text-center" style="max-width: 600px; margin: 0 auto;">
@@ -439,10 +439,10 @@ function ControlWeb() {
               </div>
             </div>
         `;
-
+        $("#modalGameOver").remove();
         $("body").append(html);
-
         $("#modalGameOver").modal("show");
+
     }
 
     this.mostrarEliminarUsuario = function () {
@@ -478,8 +478,6 @@ function ControlWeb() {
     this.limpiar = function () {
         $("#au").empty();
         $("#msg").remove();
-        $("#listaUsuarios").remove();
-        $("#fmRegistro").remove();
         $("#juego").hide();
     };
 

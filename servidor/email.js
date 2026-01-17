@@ -4,15 +4,12 @@ const gestor = require('./gestorVariables');
 const url = process.env.URL_BASE || "http://localhost:3000/";
 
 let transporter;
-let options = {
-    user: "",
-    pass: ""
-};
+
 exports.inicializarTransporter = async function () {
     if (transporter) return;
 
     try {
-        const options = await new Promise((resolve) => {
+        const opts = await new Promise((resolve) => {
             gestor.obtenerOptions(function (opt) {
                 resolve(opt);
             });
@@ -21,8 +18,8 @@ exports.inicializarTransporter = async function () {
         transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: options.user,
-                pass: options.pass
+                user: opts.user,
+                pass: opts.pass
             }
         });
 
@@ -32,17 +29,16 @@ exports.inicializarTransporter = async function () {
     }
 };
 
-module.exports.enviarEmail = async function (direccion, key, men) {
+module.exports.enviarEmail = async function (direccion, key, asunto) {
     if (!transporter) {
         await exports.inicializarTransporter();
-
         if (!transporter) {
             console.error("El transporter de correo no está disponible.");
             return;
         }
     }
 
-    const confirmLink = `${url}confirmarUsuario/${direccion}/${key}`;
+    const confirmLink = `${url.replace(/\/$/, "")}/confirmarUsuario/${direccion}/${key}`;
 
     const htmlContent = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
@@ -66,12 +62,11 @@ module.exports.enviarEmail = async function (direccion, key, men) {
         </div>
     `;
 
-
     try {
         const result = await transporter.sendMail({
             from: transporter.options.auth.user,
             to: direccion,
-            subject: men,
+            subject: asunto,
             text: 'Pulsa aquí para confirmar cuenta: ' + confirmLink,
             html: htmlContent
         });
@@ -81,5 +76,4 @@ module.exports.enviarEmail = async function (direccion, key, men) {
         console.error("Error al enviar email:", error);
         throw error;
     }
-
 };

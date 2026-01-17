@@ -2,6 +2,11 @@ const datos = require("./cad.js");
 const bcrypt = require("bcrypt");
 const correo = require("./email.js");
 
+const ERR_PARTIDA_NO_EXISTE = -1;
+const ERR_USUARIO_NO_CREADOR = -2;
+const ERR_ESTADO_INCORRECTO = -3;
+const ERR_ACTUALIZACION_FALLIDA = -4;
+
 function Partida(codigo) {
     this.codigo = codigo;
     this.jugadores = [];
@@ -14,9 +19,8 @@ function Sistema(objConfig = {}) {
     this.partidas = {};
     this.usuarios = {};
 
-    this.obtenerCodigo = function () {
-        return (new Date()).getTime().toString().substr(-6);
-    }
+    this.obtenerCodigo = () => Math.floor(Math.random() * 900000 + 100000).toString();
+
 
     this.crearPartida = function (email, callback) {
         let modelo = this;
@@ -41,7 +45,7 @@ function Sistema(objConfig = {}) {
                         }, () => { });
                         callback(codigo);
                     } else {
-                        callback(-1);
+                        callback(ERR_PARTIDA_NO_EXISTE);
                     }
                 });
 
@@ -204,13 +208,13 @@ function Sistema(objConfig = {}) {
 
             if (partida.creador !== email) {
                 console.log("Error iniciarJuego: Usuario no es creador (" + email + " vs " + partida.creador + ")");
-                callback(-2);
+                callback(ERR_USUARIO_NO_CREADOR);
                 return;
             }
 
             if (partida.estado !== "completa") {
                 console.log("Error iniciarJuego: Estado incorrecto (" + partida.estado + "). Jugadores: " + partida.jugadores.length);
-                callback(-3);
+                callback(ERR_ESTADO_INCORRECTO);
                 return;
             }
 
@@ -228,7 +232,7 @@ function Sistema(objConfig = {}) {
                     }, () => { });
                     callback(1);
                 } else {
-                    callback(-4);
+                    callback(ERR_ACTUALIZACION_FALLIDA);
                 }
             });
         });

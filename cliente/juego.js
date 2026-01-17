@@ -12,7 +12,6 @@ function Juego() {
     this.altoP = 130;
 
     this.sueloY = 350;
-    this.alturaMaxSalto = 150;
 
     this.personajeA = { x: 100, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 };
     this.personajeB = { x: 100, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 };

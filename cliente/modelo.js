@@ -17,9 +17,6 @@ Sistema.prototype.agregarUsuario = function (nick, email, password) {
     return this.contadorId;
 }
 
-Sistema.prototype.obtenerUsuario = function () {
-    return this.usuarios;
-}
 
 Sistema.prototype.usuarioActivo = function (nick) {
     return !!this.usuarios[nick];

@@ -8,32 +8,16 @@ function WSServer(io) {
     const ANCHO_CANVAS = 1200;
     const PUNTOS_PARA_GANAR = 2000;
 
-    const ALTURA_OBSTACULO = 50;
     const VELOCIDAD_INICIAL = 6;
     const VELOCIDAD_MAXIMA = 16;
 
-    let ultimoObstaculo = 0;
-    const TIEMPO_MIN_OBSTACULOS_BASE = 1500;
-
-    this.enviarAlRemitente = function (socket, mensaje, datos) {
-        socket.emit(mensaje, datos);
-    }
-
-    this.enviarATodosMenosRemitente = function (socket, mens, datos) {
-        socket.broadcast.emit(mens, datos);
-    }
-
-    this.enviarGlobal = function (io, mens, datos) {
-        io.emit(mens, datos);
-    }
+    const TIEMPO_MIN_OBSTACULOS_BASE = 1000;
 
     this.lanzarServidor = function (io, sistema) {
-        let srv = this;
-
         io.on('connection', function (socket) {
             console.log("Capa WS activa");
             sistema.obtenerPartidasDisponibles(function (lista) {
-                srv.enviarAlRemitente(socket, "listaPartidas", lista);
+                socket.emit("listaPartidas", lista);
             });
 
             socket.on("crearPartida", function (datos) {
@@ -50,9 +34,10 @@ function WSServer(io) {
                         socket.join(codigo);
                         socket.partidaCodigo = codigo;
                         socket.email = datos.email;
-                        srv.enviarAlRemitente(socket, "partidaCreada", { "codigo": codigo });
+                        socket.emit("partidaCreada", { codigo });
                         sistema.obtenerPartidasDisponibles(function (lista) {
-                            srv.enviarATodosMenosRemitente(socket, "listaPartidas", lista);
+                            const disponibles = lista.filter(p => p.estado !== "EN_CURSO");
+                            socket.broadcast.emit("listaPartidas", disponibles);
                         });
                     } else {
                         console.log("WS: Error al crear partida");
@@ -67,21 +52,22 @@ function WSServer(io) {
                         socket.join(codigo);
                         socket.partidaCodigo = codigo;
                         socket.email = datos.email;
-                        srv.enviarAlRemitente(socket, "unidoAPartida", { "codigo": codigo });
+                        socket.emit("unidoAPartida", { codigo });
 
                         sistema.obtenerEstadisticasPartida(codigo, function (partida) {
                             if (partida) {
-                                srv.enviarGlobal(io, "estadoPartidaActualizado", {
+                                io.to(codigo).emit("estadoPartidaActualizado", {
                                     codigo: codigo,
                                     estado: partida.estado,
                                     creador: partida.creador,
                                     jugadores: partida.jugadores
                                 });
+
                             }
                         });
 
                         sistema.obtenerPartidasDisponibles(function (lista) {
-                            srv.enviarATodosMenosRemitente(socket, "listaPartidas", lista);
+                            socket.broadcast.emit("listaPartidas", lista);
                         });
                     }
                 });
@@ -108,7 +94,10 @@ function WSServer(io) {
                     if (esCreador) {
                         sistema.eliminarPartida(codigo, email, function () {
                             io.to(codigo).emit("partidaCancelada", { motivo: "CREADOR_SALIO" });
-                            io.emit("listaPartidas");
+                            sistema.obtenerPartidasDisponibles(function (lista) {
+                                io.emit("listaPartidas", lista);
+                            });
+
                         });
                     } else {
                         sistema.salirDePartida(codigo, email, function () {
@@ -142,12 +131,6 @@ function WSServer(io) {
                             return;
                         }
 
-                        srv.enviarGlobal(io, "juegoIniciado", {
-                            codigo,
-                            creador: partida.creador,
-                            jugadores: partida.jugadores
-                        });
-
                         juegos[codigo] = {
                             creador: partida.creador,
                             jugadores: {
@@ -156,8 +139,15 @@ function WSServer(io) {
                             },
                             obstaculos: [],
                             juegoTerminado: false,
-                            velocidadActual: VELOCIDAD_INICIAL
+                            velocidadActual: VELOCIDAD_INICIAL,
+                            ultimoObstaculo: 0
                         };
+
+                        io.to(codigo).emit("juegoIniciado", {
+                            codigo,
+                            creador: partida.creador,
+                            jugadores: partida.jugadores
+                        });
 
                         juegos[codigo].intervalo = setInterval(() => {
                             actualizarJuego(codigo, io, juegos);
@@ -200,9 +190,10 @@ function WSServer(io) {
                 delete juegos[codigo];
 
                 sistema.eliminarPartida(codigo, email, function () {
-                    sistema.obtenerPartidasDisponibles(lista => {
+                    sistema.obtenerPartidasDisponibles(function (lista) {
                         io.emit("listaPartidas", lista);
                     });
+
                 });
 
                 socket.leave(codigo);
@@ -236,8 +227,7 @@ function WSServer(io) {
         const juego = juegos[codigo];
         if (!juego || juego.juegoTerminado) return;
 
-        const POSICION_X_JUGADOR_A = 100;
-        const POSICION_X_JUGADOR_B = 100;
+        const POSICION_X_JUGADOR = 100;
 
         // CALCULO VELOCIDAD
         const maxPuntos = Math.max(juego.jugadores.A.puntuacion, juego.jugadores.B.puntuacion);
@@ -267,20 +257,20 @@ function WSServer(io) {
         for (let o of juego.obstaculos) {
             o.x -= juego.velocidadActual;
 
-            if (hayColision(POSICION_X_JUGADOR_A, juego.jugadores.A.y, 80, 130, o.x, o.y, 50, 50)) {
+            if (hayColision(POSICION_X_JUGADOR, juego.jugadores.A.y, 80, 130, o.x, o.y, 50, 50)) {
                 haChocadoA = true;
             }
 
-            if (hayColision(POSICION_X_JUGADOR_B, juego.jugadores.B.y, 80, 130, o.x, o.y, 50, 50)) {
+            if (hayColision(POSICION_X_JUGADOR, juego.jugadores.B.y, 80, 130, o.x, o.y, 50, 50)) {
                 haChocadoB = true;
             }
 
             // CONTAR PUNTOS
-            if (!o.contadoA && o.x + o.ancho < POSICION_X_JUGADOR_A) {
+            if (!o.contadoA && o.x + o.ancho < POSICION_X_JUGADOR) {
                 juego.jugadores.A.puntuacion += o.puntuacion;
                 o.contadoA = true;
             }
-            if (!o.contadoB && o.x + o.ancho < POSICION_X_JUGADOR_B) {
+            if (!o.contadoB && o.x + o.ancho < POSICION_X_JUGADOR) {
                 juego.jugadores.B.puntuacion += o.puntuacion;
                 o.contadoB = true;
             }
@@ -317,9 +307,9 @@ function WSServer(io) {
         const tiempoEspera = Math.max(500, TIEMPO_MIN_OBSTACULOS_BASE - (juego.velocidadActual * 40));
         const ahora = Date.now();
 
-        if (ahora - ultimoObstaculo > tiempoEspera) {
-            if (Math.random() < (0.03 + (juego.velocidadActual * 0.001))) {
-                ultimoObstaculo = ahora;
+        if (ahora - juego.ultimoObstaculo > tiempoEspera) {
+            juego.ultimoObstaculo = ahora;
+            if (Math.random() < (0.15 + (juego.velocidadActual * 0.003))) {
                 let randomTipo = Math.random();
                 const Y_RAS_SUELO = SUELO_Y + 50;
                 let nuevoObstaculo = {
@@ -334,6 +324,7 @@ function WSServer(io) {
                 juego.obstaculos.push(nuevoObstaculo);
             }
         }
+
 
         // FINALIZAR POR PUNTOS
         const puntosA = juego.jugadores.A.puntuacion;
