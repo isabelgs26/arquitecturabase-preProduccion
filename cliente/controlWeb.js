@@ -233,6 +233,7 @@ function ControlWeb() {
 
     this.mostrarEsperandoInicio = function (codigo, esCreador) {
         this.limpiar();
+        console.log("[mostrarEsperandoInicio] codigo:", codigo, "esCreador:", esCreador);
 
         let html = `
         <div class="container mt-5">
@@ -364,7 +365,6 @@ function ControlWeb() {
         });
     };
 
-
     this.mostrarCierrePorAbandono = function () {
         this.limpiar();
 
@@ -431,8 +431,11 @@ function ControlWeb() {
                     </div>
                   </div>
                   <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-${color} btn-lg" onclick="location.reload()">
+                    <button type="button" class="btn btn-${color} btn-lg" id="btnReiniciarJuego">
                         VOLVER A JUGAR 🔄
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-lg" id="btnSalirAlMenu">
+                        Salir al Menú
                     </button>
                   </div>
                 </div>
@@ -441,8 +444,165 @@ function ControlWeb() {
         `;
         $("#modalGameOver").remove();
         $("body").append(html);
+
+        $("#btnReiniciarJuego").on("click", function () {
+            $("#modalGameOver").modal("hide");
+            if (ws && ws.socket) {
+                ws.socket.emit("solicitarRevancha");
+                cw.mostrarSolicitudRevancha();
+            }
+        });
+
+        $("#btnSalirAlMenu").on("click", function () {
+            $("#modalGameOver").modal("hide");
+            // Rechazar la revancha implícitamente al salir al menú
+            if (ws && ws.socket) {
+                ws.socket.emit("rechazarRevancha");
+            }
+            setTimeout(() => {
+                location.reload();
+            }, 500);
+        });
+
         $("#modalGameOver").modal("show");
 
+    }
+
+    this.mostrarSolicitudRevancha = function () {
+        this.limpiar();
+
+        let html = `
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card border-warning" style="border-width: 3px;">
+                        <div class="card-header bg-warning text-dark text-center">
+                            <h3 class="mb-0">⚔️ REVANCHA SOLICITADA</h3>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="spinner-border text-warning mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">Esperando...</span>
+                            </div>
+                            <p style="color: white; font-size: 1.2rem; margin-top: 15px;">
+                                Esperando que el rival acepte la revancha...
+                            </p>
+                            <button id="btnCancelarRevancha" class="btn btn-secondary btn-lg mt-4">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        $("#au").html(html);
+
+        $("#btnCancelarRevancha").on("click", function () {
+            if (ws && ws.socket) {
+                ws.socket.emit("cancelarRevancha");
+            }
+            cw.mostrarHome($.cookie("nick"));
+        });
+    }
+
+    this.mostrarRivalaceptaRevancha = function () {
+        this.limpiar();
+
+        let html = `
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card border-success" style="border-width: 3px;">
+                        <div class="card-header bg-success text-white text-center">
+                            <h3 class="mb-0">✅ ¡EL RIVAL ACEPTÓ!</h3>
+                        </div>
+                        <div class="card-body text-center">
+                            <p style="color: white; font-size: 1.3rem; margin: 30px 0;">
+                                La revancha está lista...
+                            </p>
+                            <div class="spinner-border text-success" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">Cargando...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        $("#au").html(html);
+    }
+
+    this.mostrarSolicitudRivalRevancha = function () {
+        this.limpiar();
+
+        let html = `
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card border-info" style="border-width: 3px;">
+                        <div class="card-header bg-info text-white text-center">
+                            <h3 class="mb-0">🎮 REVANCHA SOLICITADA</h3>
+                        </div>
+                        <div class="card-body text-center">
+                            <p style="color: white; font-size: 1.2rem; margin: 30px 0;">
+                                Tu rival solicita una revancha...
+                            </p>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-success btn-lg" id="btnAceptarRevancha">
+                                    Aceptar ✅
+                                </button>
+                                <button type="button" class="btn btn-danger btn-lg" id="btnRechazarRevancha">
+                                    Rechazar ❌
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        $("#au").html(html);
+
+        $("#btnAceptarRevancha").on("click", function () {
+            if (ws && ws.socket) {
+                ws.socket.emit("aceptarRevancha");
+            }
+            cw.mostrarRivalaceptaRevancha();
+        });
+
+        $("#btnRechazarRevancha").on("click", function () {
+            if (ws && ws.socket) {
+                ws.socket.emit("rechazarRevancha");
+            }
+            cw.mostrarHome($.cookie("nick"));
+        });
+    }
+
+    this.mostrarRivalRechazoRevancha = function () {
+        // Mostrar modal con el mensaje
+        let mBody = document.getElementById("mBody");
+        mBody.innerHTML = `
+            <div style="text-align: center;">
+                <h4 style="color: #ff6b6b; margin-bottom: 20px;">❌ Revancha Rechazada</h4>
+                <p>Tu rival ha rechazado la solicitud de revancha.</p>
+                <p style="margin-top: 15px; font-size: 0.9rem; color: #666;">Puedes intentar desafiar a otro jugador cuando lo desees.</p>
+            </div>
+        `;
+
+        $("#miModal").modal("show");
+
+        // Cuando se cierre el modal, volver a home
+        $("#miModal").off("hide.bs.modal").on("hide.bs.modal", function () {
+            cw.mostrarHome($.cookie("nick"));
+        });
+    }
+
+    this.mostrarRivalAbandonoRevancha = function () {
+        this.limpiar();
+        cw.mostrarMensaje("El rival se ha desconectado durante la revancha", "error");
+        setTimeout(() => {
+            cw.mostrarHome($.cookie("nick"));
+        }, 2000);
     }
 
     this.mostrarEliminarUsuario = function () {

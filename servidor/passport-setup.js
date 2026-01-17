@@ -25,6 +25,7 @@ passport.use('google-one-tap', new GoogleOneTapStrategy({
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     verifyCsrfToken: false
 }, function (profile, done) {
+    console.log("Google One Tap Profile:", profile);
     return done(null, profile);
 }));
 

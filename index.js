@@ -45,11 +45,17 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", function (request, response) {
     let contenido = fs.readFileSync(__dirname + "/cliente/index.html", "utf8");
 
-    // Reemplaza GOOGLE_CLIENT_ID_PLACEHOLDER
-    contenido = contenido.replace("GOOGLE_CLIENT_ID_PLACEHOLDER", process.env.GOOGLE_CLIENT_ID);
-
-    // --- CAMBIO CLAVE: Inyectar la URL de One Tap ---
-    contenido = contenido.replace("DATA_LOGIN_URI_PLACEHOLDER", ONETAP_URL);
+    // Si el usuario NO está autenticado, mostrar Google One Tap
+    if (!request.user) {
+        contenido = contenido.replace("GOOGLE_CLIENT_ID_PLACEHOLDER", process.env.GOOGLE_CLIENT_ID);
+        contenido = contenido.replace("DATA_LOGIN_URI_PLACEHOLDER", ONETAP_URL);
+        contenido = contenido.replace("<!--GOOGLE_ONE_TAP_START-->", "");
+        contenido = contenido.replace("<!--GOOGLE_ONE_TAP_END-->", "");
+    } else {
+        // Si está autenticado, ocultar Google One Tap completamente
+        contenido = contenido.replace("<!--GOOGLE_ONE_TAP_START-->", "<!--");
+        contenido = contenido.replace("<!--GOOGLE_ONE_TAP_END-->", "-->");
+    }
 
     response.setHeader("Content-type", "text/html");
     response.send(contenido);
@@ -100,18 +106,45 @@ app.get("/google/callback",
     })
 );
 
-app.post('/oneTap/callback',
-    passport.authenticate('google-one-tap', {
-        successRedirect: '/good',
-        failureRedirect: '/'
-    })
-);
+app.post('/oneTap/callback', (req, res, next) => {
+    console.log("One Tap callback recibido");
+    console.log("Body:", req.body);
+
+    passport.authenticate('google-one-tap', (err, user, info) => {
+        if (err) {
+            console.error("Error en Google One Tap:", err);
+            return res.redirect('/');
+        }
+
+        if (!user) {
+            console.log("No user found");
+            return res.redirect('/');
+        }
+
+        console.log("Usuario autenticado:", user);
+
+        if (!user.emails || user.emails.length === 0) {
+            console.log("No emails found for user");
+            return res.redirect('/');
+        }
+
+        let email = user.emails[0].value;
+        let userName = user.displayName || email;
+
+        sistema.usuarioGoogle({ "email": email, "nombre": userName }, function (obj) {
+            res.cookie('nick', userName);
+            res.cookie('email', obj.email);
+            res.redirect('/');
+        });
+    })(req, res, next);
+});
+
 app.get("/fallo", function (request, response) {
     response.send({ "nick": "nook" });
 });
 
 app.get("/good", function (request, response) {
-    if (!request.user || !request.user.emails || !request.user.emails.length === 0) {
+    if (!request.user || !request.user.emails || request.user.emails.length === 0) {
         return response.redirect('/');
     }
     let email = request.user.emails[0].value;

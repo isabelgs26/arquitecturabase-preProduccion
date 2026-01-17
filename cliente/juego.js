@@ -72,7 +72,13 @@ function Juego() {
         }, { passive: false });
 
         $("#btnSalirJuego").click(function () {
-            if (ws && ws.socket) ws.socket.emit("abandonarPartida");
+            if (ws && ws.socket) {
+                ws.socket.emit("abandonarPartida");
+                // Redirigir al home después de abandonar
+                setTimeout(() => {
+                    if (cw) cw.mostrarHome($.cookie("nick"));
+                }, 300);
+            }
         });
     }
 
@@ -247,6 +253,28 @@ function Juego() {
         } else {
             alert((yoGano ? "GANASTE" : "PERDISTE") + "\n" + mensaje);
         }
+    }
+
+    this.reiniciarPartida = function () {
+        // Reiniciar estados del juego
+        this.juegoTerminado = false;
+        this.obstaculos = [];
+        this.particulas = [];
+
+        // Reiniciar personajes
+        this.personajeA = { x: 100, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 };
+        this.personajeB = { x: 100, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 };
+
+        // Reiniciar música y vídeo
+        this.musicaFondo.currentTime = 0;
+        this.musicaFondo.play().catch(e => console.log("Haz click en la web para activar audio"));
+
+        this.videoFondo.currentTime = 0;
+        this.videoFondo.play().catch(e => console.log("Error video fondo:", e));
+
+        // Reiniciar el bucle de animación
+        if (this.bucle) cancelAnimationFrame(this.bucle);
+        this.bucle = requestAnimationFrame(() => this.actualizar());
     }
     this.sincronizarEstado = function (estado) {
         if (!estado || !estado.jugadores) return;

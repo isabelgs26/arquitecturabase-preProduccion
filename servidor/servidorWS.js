@@ -93,7 +93,11 @@ function WSServer(io) {
 
                     if (esCreador) {
                         sistema.eliminarPartida(codigo, email, function () {
-                            io.to(codigo).emit("partidaCancelada", { motivo: "CREADOR_SALIO" });
+                            socket.broadcast.to(codigo).emit("partidaCancelada", { motivo: "CREADOR_SALIO" });
+                            socket.leave(codigo);
+                            socket.partidaCodigo = null;
+                            socket.email = null;
+                            socket.emit("salidaConfirmada");
                             sistema.obtenerPartidasDisponibles(function (lista) {
                                 io.emit("listaPartidas", lista);
                             });
@@ -104,7 +108,7 @@ function WSServer(io) {
                             socket.leave(codigo);
                             socket.partidaCodigo = null;
                             socket.email = null;
-                            io.to(codigo).emit("rivalSalio", { email });
+                            socket.broadcast.to(codigo).emit("rivalSalio", { email });
                             socket.emit("salidaConfirmada");
                         });
                     }
@@ -156,6 +160,39 @@ function WSServer(io) {
                 });
             });
 
+            socket.on("reiniciarJuego", function () {
+                const codigo = socket.partidaCodigo;
+                const email = socket.email;
+
+                if (!codigo || !email) return;
+
+                const juego = juegos[codigo];
+                if (!juego) return;
+
+                // Reiniciar el estado del juego sin crear una nueva partida
+                juego.juegoTerminado = false;
+                juego.obstaculos = [];
+                juego.velocidadActual = VELOCIDAD_INICIAL;
+                juego.ultimoObstaculo = 0;
+
+                juego.jugadores = {
+                    A: { x: 100, y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 },
+                    B: { x: 100, y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 }
+                };
+
+                // Notificar a ambos jugadores que el juego se ha reiniciado
+                io.to(codigo).emit("juegoReiniciado", {
+                    codigo,
+                    jugadores: juego.jugadores
+                });
+
+                // Reiniciar el intervalo del juego
+                clearInterval(juego.intervalo);
+                juego.intervalo = setInterval(() => {
+                    actualizarJuego(codigo, io, juegos);
+                }, 17);
+            });
+
             socket.on("saltar", function (datos) {
                 const codigo = socket.partidaCodigo;
                 const email = socket.email;
@@ -185,7 +222,7 @@ function WSServer(io) {
                 if (!juego) return;
 
                 juego.juegoTerminado = true;
-                io.to(codigo).emit("partidaAbandonada", { email, codigo });
+                socket.broadcast.to(codigo).emit("partidaAbandonada", { email, codigo });
                 clearInterval(juego.intervalo);
                 delete juegos[codigo];
 
@@ -201,16 +238,123 @@ function WSServer(io) {
                 socket.email = null;
             });
 
+            socket.on("solicitarRevancha", function () {
+                const codigo = socket.partidaCodigo;
+                const email = socket.email;
+
+                if (!codigo || !email) return;
+
+                sistema.obtenerEstadisticasPartida(codigo, function (partida) {
+                    if (!partida || partida.jugadores.length < 2) return;
+
+                    // Encontrar el otro jugador
+                    const otroJugador = partida.jugadores.find(j => j.email !== email);
+                    if (!otroJugador) return;
+
+                    // Guardar en la partida que alguien solicita revancha
+                    partida.revanchaSolicitada = true;
+                    partida.revanchaPor = email;
+
+                    // Notificar al otro jugador
+                    io.to(codigo).emit("solicitudRevanchaRecibida", { email, otroJugador: otroJugador.email });
+                });
+            });
+
+            socket.on("aceptarRevancha", function () {
+                const codigo = socket.partidaCodigo;
+                const email = socket.email;
+
+                if (!codigo || !email) return;
+
+                sistema.obtenerEstadisticasPartida(codigo, function (partida) {
+                    if (!partida) return;
+
+                    // Crear nuevo juego para la revancha
+                    juegos[codigo] = {
+                        creador: partida.creador,
+                        jugadores: {
+                            A: { x: 100, y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 },
+                            B: { x: 100, y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 }
+                        },
+                        obstaculos: [],
+                        juegoTerminado: false,
+                        velocidadActual: VELOCIDAD_INICIAL,
+                        ultimoObstaculo: 0
+                    };
+
+                    // Notificar a ambos que la revancha fue aceptada
+                    io.to(codigo).emit("revanchaAceptada", {
+                        codigo,
+                        creador: partida.creador,
+                        jugadores: partida.jugadores
+                    });
+
+                    // Reiniciar el intervalo del juego
+                    juegos[codigo].intervalo = setInterval(() => {
+                        actualizarJuego(codigo, io, juegos);
+                    }, 17);
+                });
+            });
+
+            socket.on("rechazarRevancha", function () {
+                const codigo = socket.partidaCodigo;
+                const email = socket.email;
+
+                if (!codigo || !email) return;
+
+                // Notificar SOLO al rival que rechazó la revancha
+                socket.broadcast.to(codigo).emit("revanchaRechazada", { email });
+
+                // Limpiar la partida
+                sistema.eliminarPartida(codigo, email, function () {
+                    sistema.obtenerPartidasDisponibles(function (lista) {
+                        io.emit("listaPartidas", lista);
+                    });
+                });
+
+                socket.leave(codigo);
+                socket.partidaCodigo = null;
+                socket.email = null;
+            });
+
+            socket.on("cancelarRevancha", function () {
+                const codigo = socket.partidaCodigo;
+                const email = socket.email;
+
+                if (!codigo || !email) return;
+
+                sistema.obtenerEstadisticasPartida(codigo, function (partida) {
+                    if (!partida) return;
+
+                    // Notificar al otro jugador que se canceló
+                    io.to(codigo).emit("revanchaRechazada", { email });
+
+                    // Limpiar la partida
+                    sistema.eliminarPartida(codigo, email, function () {
+                        sistema.obtenerPartidasDisponibles(function (lista) {
+                            io.emit("listaPartidas", lista);
+                        });
+                    });
+                });
+
+                socket.leave(codigo);
+                socket.partidaCodigo = null;
+                socket.email = null;
+            });
+
             socket.on("disconnect", function () {
                 const codigo = socket.partidaCodigo;
                 const email = socket.email;
                 if (!codigo || !email) return;
 
                 if (juegos[codigo]) {
+                    // Si hay un juego en curso, se abandonó
                     io.to(codigo).emit("partidaAbandonada", { email, codigo });
                     clearInterval(juegos[codigo].intervalo);
                     delete juegos[codigo];
                 } else {
+                    // Si no hay juego en curso, podría ser durante revancha o espera
+                    io.to(codigo).emit("rivalAbandonoDuranteRevancha", { email, codigo });
                     io.to(codigo).emit("rivalDesconectado", { email, codigo });
                 }
 

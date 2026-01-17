@@ -40,8 +40,15 @@ function ClienteWS() {
 
         this.socket.on("estadoPartidaActualizado", function (datos) {
             console.log("Estado de partida actualizado:", datos);
+            // Obtener email desde la cookie ya que podría no estar asignado aún
+            const emailActual = $.cookie("email") || cli.email;
+            console.log("emailActual:", emailActual, "datos.creador:", datos.creador);
             if (datos.estado === "completa") {
-                let esCreador = (datos.creador === cli.email);
+                let esCreador = false;
+                if (emailActual && datos.creador) {
+                    esCreador = (datos.creador === emailActual);
+                }
+                console.log("¿Es creador?", esCreador);
                 if (cw) cw.mostrarEsperandoInicio(datos.codigo, esCreador);
             }
         });
@@ -108,6 +115,47 @@ function ClienteWS() {
             if (juego) juego.finalizarPartida(datos);
         });
 
+        this.socket.on("juegoReiniciado", function (datos) {
+            console.log("¡Juego reiniciado!", datos);
+
+            if (juego) {
+                juego.reiniciarPartida();
+            }
+        });
+
+        this.socket.on("solicitudRevanchaRecibida", function (datos) {
+            console.log("El rival solicita revancha");
+            if (cw) cw.mostrarSolicitudRivalRevancha();
+        });
+
+        this.socket.on("revanchaAceptada", function (datos) {
+            console.log("Revancha aceptada por ambos!", datos);
+
+            const canvas = document.getElementById("miCanvas");
+            if (canvas) canvas.style.display = "block";
+
+            let soyJugadorA = (datos.creador === cli.email);
+
+            if (juego) {
+                juego.reiniciarPartida();
+            } else {
+                juego = new Juego();
+                juego.iniciar(soyJugadorA);
+            }
+
+            if (cw) cw.mostrarPantallaJuego(soyJugadorA);
+        });
+
+        this.socket.on("revanchaRechazada", function () {
+            console.log("Revancha rechazada");
+            if (cw) cw.mostrarRivalRechazoRevancha();
+        });
+
+        this.socket.on("rivalAbandonoDuranteRevancha", function () {
+            console.log("El rival se fue durante la revancha");
+            if (cw) cw.mostrarRivalAbandonoRevancha();
+        });
+
     };
 
     this.crearPartida = function () {
@@ -129,8 +177,6 @@ function ClienteWS() {
         this.socket.emit("cancelarPartida");
     };
 
-
-
     this.iniciarJuego = function () {
         this.socket.emit("iniciarJuego", {
             "email": this.email,
@@ -144,7 +190,6 @@ function ClienteWS() {
             "codigo": this.codigo
         });
     }
+
     this.ini();
 }
-
-
