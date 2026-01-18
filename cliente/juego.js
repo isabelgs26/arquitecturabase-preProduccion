@@ -66,11 +66,51 @@
     this.iniciar = function (soyA) {
         this.soyJugadorA = soyA;
         if (!this.canvas) this.ini();
-        this.musicaFondo.currentTime = 0;
-        this.musicaFondo.play().catch(e => console.log("Haz click en la web para activar audio"));
-        this.videoFondo.play().catch(e => console.log("Error video fondo:", e));
-        if (this.bucle) cancelAnimationFrame(this.bucle);
-        this.bucle = requestAnimationFrame(() => this.actualizar());
+
+        this.mostrarCountdown(() => {
+            this.musicaFondo.currentTime = 0;
+            this.musicaFondo.play().catch(e => console.log("Haz click en la web para activar audio"));
+            this.videoFondo.play().catch(e => console.log("Error video fondo:", e));
+            if (this.bucle) cancelAnimationFrame(this.bucle);
+            this.bucle = requestAnimationFrame(() => this.actualizar());
+        });
+    }
+    this.mostrarCountdown = function (callback) {
+        const overlay = document.createElement('div');
+        overlay.id = 'countdown-overlay';
+        overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+
+        const countText = document.createElement('div');
+        countText.style.cssText = 'font-size: 120px; font-weight: bold; color: #3b82f6; text-shadow: 0 0 30px #3b82f6, 0 0 60px #8b5cf6; animation: pulse-scale 1s ease-in-out;';
+        overlay.appendChild(countText);
+        document.body.appendChild(overlay);
+
+        const style = document.createElement('style');
+        style.textContent = '@keyframes pulse-scale { 0%, 100% { transform: scale(1); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } }';
+        document.head.appendChild(style);
+
+        let count = 3;
+        const updateCount = () => {
+            if (count > 0) {
+                countText.textContent = count;
+                countText.style.animation = 'none';
+                setTimeout(() => { countText.style.animation = 'pulse-scale 1s ease-in-out'; }, 10);
+                count--;
+                setTimeout(updateCount, 1000);
+            } else {
+                countText.textContent = '¡GO!';
+                countText.style.color = '#10b981';
+                countText.style.textShadow = '0 0 30px #10b981, 0 0 60px #10b981';
+                countText.style.animation = 'none';
+                setTimeout(() => { countText.style.animation = 'pulse-scale 1s ease-in-out'; }, 10);
+                setTimeout(() => {
+                    overlay.remove();
+                    style.remove();
+                    callback();
+                }, 1000);
+            }
+        };
+        updateCount();
     }
     this.saltar = function () {
         let miPersonaje = this.soyJugadorA ? this.personajeA : this.personajeB;
@@ -129,12 +169,29 @@
         const maxPuntos = 2000;
         const porcentaje = Math.min((misPuntos / maxPuntos) * 100, 100);
 
+        if (!this.ultimosPuntos) this.ultimosPuntos = misPuntos;
+        if (misPuntos !== this.ultimosPuntos) {
+            this.puntosAnimando = true;
+            this.tiempoAnimacion = Date.now();
+            this.ultimosPuntos = misPuntos;
+        }
+
         const barWidth = 250;
         const barHeight = 30;
         const barX = 30;
         const barY = 30;
 
-        this.ctx.font = "bold 24px Arial";
+        let scale = 1;
+        if (this.puntosAnimando) {
+            const elapsed = Date.now() - this.tiempoAnimacion;
+            if (elapsed < 300) {
+                scale = 1 + Math.sin((elapsed / 300) * Math.PI) * 0.3;
+            } else {
+                this.puntosAnimando = false;
+            }
+        }
+
+        this.ctx.font = `bold ${24 * scale}px Arial`;
         this.ctx.textAlign = "center";
         this.ctx.fillStyle = "white";
         this.ctx.strokeStyle = "black";
@@ -158,7 +215,34 @@
 
         this.ctx.restore();
     }
+    this.shakeCanvas = function () {
+        const canvas = document.getElementById('miCanvas');
+        if (!canvas) return;
+        canvas.style.animation = 'shake 0.5s';
+        setTimeout(() => { canvas.style.animation = ''; }, 500);
+
+        if (!document.getElementById('shake-style')) {
+            const style = document.createElement('style');
+            style.id = 'shake-style';
+            style.textContent = '@keyframes shake { 0%, 100% { transform: translate(0, 0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-5px, 0); } 20%, 40%, 60%, 80% { transform: translate(5px, 0); } }';
+            document.head.appendChild(style);
+        }
+    }
+    this.dibujarSombra = function (pj) {
+        this.ctx.save();
+        this.ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+        this.ctx.beginPath();
+        const sueloPersonaje = this.sueloY + this.altoP;
+        const shadowWidth = this.anchoP * 0.6;
+        const shadowHeight = 8;
+        const shadowX = pj.x + (this.anchoP - shadowWidth) / 2;
+        const shadowY = sueloPersonaje - 3;
+        this.ctx.ellipse(shadowX + shadowWidth / 2, shadowY + shadowHeight / 2, shadowWidth / 2, shadowHeight / 2, 0, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.restore();
+    }
     this.dibujarPersonaje = function (pj, img, colorBackup) {
+        this.dibujarSombra(pj);
         if (img.complete && img.naturalWidth !== 0) {
             this.ctx.drawImage(img, pj.x, pj.y, this.anchoP, this.altoP);
         } else {
@@ -195,6 +279,7 @@
         let huboChoque = (datos.puntosA < 2000 && datos.puntosB < 2000);
         if (huboChoque) {
             this.sonidoCrash.play();
+            this.shakeCanvas();
         }
         if (ganadorServidor === "EMPATE") {
             if (huboChoque) {

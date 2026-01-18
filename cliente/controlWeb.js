@@ -309,24 +309,56 @@
     this.mostrarCierrePorAbandono = function () {
         this.limpiar();
         let html = `
-        <div class="card border-danger text-center" style="max-width: 500px; margin: 0 auto;">
-            <div class="card-header bg-danger text-white">
-                <h3>🚫 Partida Finalizada</h3>
-            </div>
-            <div class="card-body">
-                <h5 class="card-title text-danger">Tu rival ha abandonado la partida</h5>
-                <p class="card-text" style="color: white;">
-                    La partida ha terminado porque el otro jugador se desconectó o canceló el juego.
-                </p>
-                <hr>
-                <p style="color: white;">¿Qué quieres hacer ahora?</p>
-                <button id="btnVolverJugar" class="btn btn-primary btn-lg btn-block">
-                    Volver a Jugar
-                </button>
+        <style>
+            .btn-hover-effect {
+                transition: all 0.3s ease;
+                position: relative;
+                overflow: hidden;
+            }
+            .btn-hover-effect:before {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 0;
+                height: 0;
+                border-radius: 50%;
+                background: rgba(255,255,255,0.3);
+                transform: translate(-50%, -50%);
+                transition: width 0.6s, height 0.6s;
+            }
+            .btn-hover-effect:hover:before {
+                width: 300px;
+                height: 300px;
+            }
+            .btn-hover-effect:hover {
+                transform: translateY(-3px) scale(1.05);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
+            }
+        </style>
+        <div class="modal fade show" id="modalAbandono" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false" style="display: block; background: rgba(0,0,0,0.7);">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content text-center" style="background: linear-gradient(145deg, #1a1f35 0%, #0f1419 100%); color: white; border: 2px solid #ef4444; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.8);">
+                    <div class="modal-header justify-content-center text-white" style="background: linear-gradient(135deg, #ef4444, #dc2626); border: none; border-radius: 18px 18px 0 0; padding: 25px;">
+                        <h2 class="modal-title font-weight-bold" style="font-size: 2.2rem; text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 2px rgba(255,255,255,0.3);">🚫 Partida Finalizada</h2>
+                    </div>
+                    <div class="modal-body" style="padding: 40px 35px; background: rgba(15,20,25,0.5);">
+                        <h4 class="mb-4" style="color: #93c5fd; font-size: 1.4rem; font-weight: 700; text-shadow: 0 0 10px rgba(147, 197, 253, 0.5);">Tu rival ha abandonado la partida</h4>
+                        <p style="color: #cbd5e1; font-size: 1.1rem; line-height: 1.6; margin-bottom: 0;">
+                            La partida ha terminado porque el otro jugador se desconectó o canceló el juego.
+                        </p>
+                    </div>
+                    <div class="modal-footer justify-content-center" style="border: none; padding: 20px 35px 35px; background: rgba(0,0,0,0.2);">
+                        <button id="btnVolverJugar" class="btn btn-lg btn-hover-effect" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; font-weight: 700; min-width: 200px; border: none; box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4); position: relative;">
+                            Volver a Jugar 🎮
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>`;
         $("#au").html(html);
         $("#btnVolverJugar").on("click", function () {
+            $("#modalAbandono").remove();
             cw.mostrarCrearPartida();
         });
     };
@@ -346,6 +378,60 @@
         const colorBarraB = soyJugadorA ? "#8b5cf6" : "#3b82f6";
 
         let html = `
+            <style>
+                .btn-hover-effect {
+                    transition: all 0.3s ease;
+                    position: relative;
+                    overflow: hidden;
+                }
+                .btn-hover-effect:before {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 0;
+                    height: 0;
+                    border-radius: 50%;
+                    background: rgba(255,255,255,0.3);
+                    transform: translate(-50%, -50%);
+                    transition: width 0.6s, height 0.6s;
+                }
+                .btn-hover-effect:hover:before {
+                    width: 300px;
+                    height: 300px;
+                }
+                .btn-hover-effect:hover {
+                    transform: translateY(-3px) scale(1.05);
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
+                }
+                .confetti {
+                    position: fixed;
+                    width: 10px;
+                    height: 10px;
+                    background: #f0f;
+                    position: absolute;
+                    animation: confetti-fall 3s linear forwards;
+                    z-index: 9999;
+                }
+                @keyframes confetti-fall {
+                    to {
+                        transform: translateY(100vh) rotate(360deg);
+                        opacity: 0;
+                    }
+                }
+                .custom-spinner {
+                    width: 50px;
+                    height: 50px;
+                    border: 4px solid rgba(255,255,255,0.1);
+                    border-top-color: #f59e0b;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto;
+                }
+                @keyframes spin {
+                    to { transform: rotate(360deg); }
+                }
+            </style>
             <div class="modal fade" id="modalGameOver" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
               <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content text-center" style="background: linear-gradient(145deg, #1a1f35 0%, #0f1419 100%); color: white; border: 2px solid ${colorHeader}; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.8);">
@@ -376,10 +462,10 @@
                     </div>
                   </div>
                   <div class="modal-footer justify-content-center" style="border: none; padding: 20px 35px 35px; background: rgba(0,0,0,0.2);">
-                    <button type="button" class="btn btn-lg" id="btnReiniciarJuego" style="background: linear-gradient(135deg, ${colorHeader}, ${colorHeader}dd); color: white; font-weight: 700; min-width: 200px; border: none; box-shadow: 0 5px 20px ${colorHeader}66; transition: all 0.3s;">
+                    <button type="button" class="btn btn-lg btn-hover-effect" id="btnReiniciarJuego" style="background: linear-gradient(135deg, ${colorHeader}, ${colorHeader}dd); color: white; font-weight: 700; min-width: 200px; border: none; box-shadow: 0 5px 20px ${colorHeader}66; transition: all 0.3s; position: relative;">
                         VOLVER A JUGAR 🔄
                     </button>
-                    <button type="button" class="btn btn-lg" id="btnSalirAlMenu" style="background: linear-gradient(135deg, #6b7280, #4b5563); color: white; font-weight: 600; min-width: 130px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
+                    <button type="button" class="btn btn-lg btn-hover-effect" id="btnSalirAlMenu" style="background: linear-gradient(135deg, #6b7280, #4b5563); color: white; font-weight: 600; min-width: 130px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: relative;">
                         Salir
                     </button>
                   </div>
@@ -390,6 +476,27 @@
         $("body").append(html);
 
         $("#modalGameOver").modal("show");
+
+        if (yoGano && mensaje !== "¡Empate!") {
+            setTimeout(() => {
+                const colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899'];
+                for (let i = 0; i < 50; i++) {
+                    setTimeout(() => {
+                        const confetti = $('<div class="confetti"></div>');
+                        const color = colors[Math.floor(Math.random() * colors.length)];
+                        confetti.css({
+                            left: Math.random() * window.innerWidth + 'px',
+                            top: '-20px',
+                            background: color,
+                            animationDelay: Math.random() * 0.5 + 's',
+                            animationDuration: (Math.random() * 2 + 2) + 's'
+                        });
+                        $('body').append(confetti);
+                        setTimeout(() => confetti.remove(), 4000);
+                    }, i * 30);
+                }
+            }, 300);
+        }
 
         setTimeout(() => {
             $(".progress-bar-animated").each(function () {
@@ -402,9 +509,9 @@
             if (ws && ws.socket) ws.socket.emit("solicitarRevancha");
             let footer = $(this).closest('.modal-footer');
             footer.html(`
-                <div class="w-100 text-center">
-                    <div class="spinner-border text-warning mb-2" role="status"></div>
-                    <h5 class="text-muted">⏳ Esperando contestación del rival...</h5>
+                <div class="w-100 text-center" style="padding: 20px;">
+                    <div class="custom-spinner"></div>
+                    <h5 style="color: #f59e0b; margin-top: 20px; font-weight: 600; text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);">⏳ Esperando contestación del rival...</h5>
                 </div>
             `);
         });
@@ -444,9 +551,9 @@
         let modal = $("#modalGameOver");
         let footer = modal.find('.modal-footer');
         footer.html(`
-            <div class="text-success font-weight-bold">
-                ✅ ¡Rival listo! Reiniciando...
-                <div class="spinner-border spinner-border-sm ml-2"></div>
+            <div class="text-center" style="padding: 20px;">
+                <div style="width: 40px; height: 40px; border: 3px solid rgba(16, 185, 129, 0.3); border-top-color: #10b981; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 15px;"></div>
+                <h5 style="color: #10b981; font-weight: 700; text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);">✅ ¡Rival listo! Reiniciando...</h5>
             </div>
         `);
     };
@@ -524,17 +631,65 @@
         $("#juego").hide();
     };
     this.mostrarMensaje = function (msg, tipo = "info") {
-        let claseAlerta = (tipo === "exito") ? "alert-success" : (tipo === "error") ? "alert-danger" : "alert-info";
+        let colorBg, colorBorder, icon;
+        if (tipo === "exito") {
+            colorBg = "linear-gradient(135deg, #10b981, #059669)";
+            colorBorder = "#10b981";
+            icon = "✅";
+        } else if (tipo === "error") {
+            colorBg = "linear-gradient(135deg, #ef4444, #dc2626)";
+            colorBorder = "#ef4444";
+            icon = "❌";
+        } else {
+            colorBg = "linear-gradient(135deg, #3b82f6, #2563eb)";
+            colorBorder = "#3b82f6";
+            icon = "ℹ️";
+        }
+
         $("#msg").remove();
         let html = `
-        <div id="msg" class="alert ${claseAlerta} alert-dismissible fade show fixed-top text-center" role="alert" style="z-index: 9999; margin: 0;">
+        <style>
+            @keyframes slideDown {
+                from { transform: translateY(-100px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            @keyframes slideUp {
+                from { transform: translateY(0); opacity: 1; }
+                to { transform: translateY(-100px); opacity: 0; }
+            }
+            .toast-custom {
+                animation: slideDown 0.5s ease-out;
+            }
+            .toast-custom.hiding {
+                animation: slideUp 0.5s ease-in;
+            }
+        </style>
+        <div id="msg" class="toast-custom" style="
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            background: ${colorBg};
+            color: white;
+            padding: 18px 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px ${colorBorder}66;
+            border: 2px solid ${colorBorder};
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            min-width: 300px;
+            text-align: center;
+        ">
+            <span style="margin-right: 10px; font-size: 1.3rem;">${icon}</span>
             ${msg}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close"> 
-                <span aria-hidden="true">&times;</span>
-            </button>
         </div>`;
         $("body").prepend(html);
-        setTimeout(() => { $("#msg").alert('close'); }, 3000);
+        setTimeout(() => {
+            $("#msg").addClass('hiding');
+            setTimeout(() => $("#msg").remove(), 500);
+        }, 3000);
     };
     this.mostrarModal = function (m) {
         $("#msg").remove();
