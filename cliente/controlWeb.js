@@ -332,36 +332,54 @@
     };
     this.mostrarModalGameOver = function (yoGano, mensaje, puntosA, puntosB, soyJugadorA) {
         let titulo = yoGano ? "¡VICTORIA! 🏆" : (mensaje.includes("EMPATE") ? "¡EMPATE! 🤝" : "¡DERROTA! 💀");
-        let color = yoGano ? "success" : (mensaje.includes("EMPATE") ? "warning" : "danger");
+        let colorHeader = yoGano ? "#10b981" : (mensaje.includes("EMPATE") ? "#f59e0b" : "#ef4444");
+        let colorBg = yoGano ? "rgba(16, 185, 129, 0.15)" : (mensaje.includes("EMPATE") ? "rgba(245, 158, 11, 0.15)" : "rgba(239, 68, 68, 0.15)");
 
-        let nombreJugadorA = soyJugadorA ? "Tú (Jugador A)" : "Rival (Jugador A)";
-        let nombreJugadorB = soyJugadorA ? "Rival (Jugador B)" : "Tú (Jugador B)";
+        let nombreJugadorA = soyJugadorA ? "Tú" : "Rival";
+        let nombreJugadorB = soyJugadorA ? "Rival" : "Tú";
+
+        const maxPuntos = 2000;
+        const porcentajeA = Math.min((puntosA / maxPuntos) * 100, 100);
+        const porcentajeB = Math.min((puntosB / maxPuntos) * 100, 100);
+
+        const colorBarraA = soyJugadorA ? "#3b82f6" : "#8b5cf6";
+        const colorBarraB = soyJugadorA ? "#8b5cf6" : "#3b82f6";
 
         let html = `
             <div class="modal fade" id="modalGameOver" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
               <div class="modal-dialog modal-dialog-centered" role="document">
-                <div class="modal-content text-center border-${color}">
-                  <div class="modal-header justify-content-center bg-${color} text-white">
-                    <h2 class="modal-title font-weight-bold">${titulo}</h2>
+                <div class="modal-content text-center" style="background: linear-gradient(145deg, #1a1f35 0%, #0f1419 100%); color: white; border: 2px solid ${colorHeader}; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.8);">
+                  <div class="modal-header justify-content-center text-white" style="background: ${colorHeader}; border: none; border-radius: 18px 18px 0 0; padding: 25px;">
+                    <h2 class="modal-title font-weight-bold" style="font-size: 2.2rem; text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 2px rgba(255,255,255,0.3);">${titulo}</h2>
                   </div>
-                  <div class="modal-body">
-                    <h4 class="mb-4 text-dark" id="mensajeFin">${mensaje}</h4>
-                    <div class="row">
-                      <div class="col-6">
-                        <h5 class="text-primary">${nombreJugadorA}</h5>
-                        <h3 class="font-weight-bold text-dark">${puntosA}</h3>
+                  <div class="modal-body" style="padding: 35px; background: ${colorBg};">
+                    <h4 class="mb-4" id="mensajeFin" style="color: #ffffff; font-size: 1.3rem; font-weight: 600; text-shadow: 1px 1px 3px rgba(0,0,0,0.7);">${mensaje}</h4>
+                    
+                    <div class="mb-4">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 style="color: ${colorBarraA}; margin: 0; font-weight: 700; font-size: 1.3rem; text-shadow: 0 0 10px ${colorBarraA};">${nombreJugadorA}</h5>
+                        <span style="color: #ffffff; font-weight: bold; font-size: 1.4rem; background: ${colorBarraA}; padding: 5px 15px; border-radius: 10px; box-shadow: 0 0 15px ${colorBarraA};">${puntosA}</span>
                       </div>
-                      <div class="col-6">
-                        <h5 class="text-warning">${nombreJugadorB}</h5>
-                        <h3 class="font-weight-bold text-dark">${puntosB}</h3>
+                      <div style="background: rgba(0,0,0,0.4); border-radius: 12px; height: 35px; overflow: hidden; border: 2px solid rgba(255,255,255,0.2); box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);">
+                        <div class="progress-bar-animated" style="background: linear-gradient(90deg, ${colorBarraA}, ${colorBarraA}dd); height: 100%; width: 0%; border-radius: 10px; transition: width 1s ease-out; box-shadow: 0 0 20px ${colorBarraA}, inset 0 0 10px rgba(255,255,255,0.3);" data-width="${porcentajeA}"></div>
+                      </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 style="color: ${colorBarraB}; margin: 0; font-weight: 700; font-size: 1.3rem; text-shadow: 0 0 10px ${colorBarraB};">${nombreJugadorB}</h5>
+                        <span style="color: #ffffff; font-weight: bold; font-size: 1.4rem; background: ${colorBarraB}; padding: 5px 15px; border-radius: 10px; box-shadow: 0 0 15px ${colorBarraB};">${puntosB}</span>
+                      </div>
+                      <div style="background: rgba(0,0,0,0.4); border-radius: 12px; height: 35px; overflow: hidden; border: 2px solid rgba(255,255,255,0.2); box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);">
+                        <div class="progress-bar-animated" style="background: linear-gradient(90deg, ${colorBarraB}, ${colorBarraB}dd); height: 100%; width: 0%; border-radius: 10px; transition: width 1s ease-out; box-shadow: 0 0 20px ${colorBarraB}, inset 0 0 10px rgba(255,255,255,0.3);" data-width="${porcentajeB}"></div>
                       </div>
                     </div>
                   </div>
-                  <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-${color} btn-lg" id="btnReiniciarJuego">
+                  <div class="modal-footer justify-content-center" style="border: none; padding: 20px 35px 35px; background: rgba(0,0,0,0.2);">
+                    <button type="button" class="btn btn-lg" id="btnReiniciarJuego" style="background: linear-gradient(135deg, ${colorHeader}, ${colorHeader}dd); color: white; font-weight: 700; min-width: 200px; border: none; box-shadow: 0 5px 20px ${colorHeader}66; transition: all 0.3s;">
                         VOLVER A JUGAR 🔄
                     </button>
-                    <button type="button" class="btn btn-secondary btn-lg" id="btnSalirAlMenu">
+                    <button type="button" class="btn btn-lg" id="btnSalirAlMenu" style="background: linear-gradient(135deg, #6b7280, #4b5563); color: white; font-weight: 600; min-width: 130px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
                         Salir
                     </button>
                   </div>
@@ -370,6 +388,16 @@
             </div>`;
         $("#modalGameOver").remove();
         $("body").append(html);
+
+        $("#modalGameOver").modal("show");
+
+        setTimeout(() => {
+            $(".progress-bar-animated").each(function () {
+                const targetWidth = $(this).attr("data-width");
+                $(this).css("width", targetWidth + "%");
+            });
+        }, 200);
+
         $("#btnReiniciarJuego").off("click").on("click", function () {
             if (ws && ws.socket) ws.socket.emit("solicitarRevancha");
             let footer = $(this).closest('.modal-footer');
@@ -386,14 +414,14 @@
             }
             setTimeout(() => location.reload(), 300);
         });
-        $("#modalGameOver").modal("show");
     };
     this.mostrarSolicitudRivalRevancha = function () {
         let modal = $("#modalGameOver");
         if (!modal.hasClass('show')) modal.modal('show');
         let header = modal.find('.modal-header');
         header.removeClass('bg-danger bg-success bg-warning').addClass('bg-info');
-        header.find('.modal-title').html("⚔️ REVANCHA SOLICITADA");
+        header.css('background', 'linear-gradient(135deg, #06b6d4, #0891b2)');
+        header.find('.modal-title').html("⚔️ REVANCHA SOLICITADA").css({ 'text-shadow': '0 2px 8px rgba(0,0,0,0.9), 0 0 2px rgba(255,255,255,0.3)', 'font-size': '2.2rem' });
         $("#mensajeFin").html("Tu rival quiere volver a jugar. ¿Aceptas?");
         let footer = modal.find('.modal-footer');
         footer.html(`
@@ -530,23 +558,26 @@
     this.gestionarSalidaRivalFin = function () {
         let modal = $("#modalGameOver");
         let footer = modal.find('.modal-footer');
+
+        $("#mensajeFin").html(`
+            <div class="text-center" style="padding: 10px 0;">
+                <div style="font-size: 2.5rem; margin-bottom: 15px;">😔</div>
+                <p style="color: #94a3b8; font-size: 1.2rem; font-weight: 600;">
+                    Tu rival no quiere revancha
+                </p>
+            </div>
+        `);
+
         $("#btnReiniciarJuego").remove();
-        if (footer.find('#msgRivalIdo').length === 0) {
-            footer.html(`
-                <div id="msgRivalIdo" class="text-muted w-100 mb-2 text-center">
-                    <p>❌ El rival ha salido de la partida.</p>
-                    <small>Solo puedes salir al menú principal.</small>
-                </div>
-                <button type="button" class="btn btn-secondary btn-lg" id="btnSalirAlMenu">
-                    Salir
-                </button>
-            `);
-            $("#btnSalirAlMenu").off("click").on("click", function () {
-                if (ws && ws.socket) {
-                    ws.socket.emit("salirDespuesDeFin");
-                }
-                setTimeout(() => location.reload(), 300);
-            });
-        }
+
+        footer.html(`
+            <button type="button" class="btn btn-lg" id="btnSalirAlMenu" style="background: linear-gradient(135deg, #6b7280, #4b5563); color: white; font-weight: 600; min-width: 130px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
+                Salir
+            </button>
+        `);
+
+        $("#btnSalirAlMenu").off("click").on("click", function () {
+            setTimeout(() => location.reload(), 300);
+        });
     };
 }

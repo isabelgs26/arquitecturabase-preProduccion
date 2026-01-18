@@ -123,15 +123,39 @@
         }
         this.dibujarObstaculos();
         this.gestionarParticulas();
+
         this.ctx.save();
-        this.ctx.fillStyle = "black";
-        this.ctx.font = "bold 30px Arial";
-        this.ctx.textAlign = "left";
-        if (this.soyJugadorA) {
-            this.ctx.fillText("Jugador A: " + this.personajeA.puntuacion, 30, 50);
-        } else {
-            this.ctx.fillText("Jugador B: " + this.personajeB.puntuacion, 30, 50);
-        }
+        let misPuntos = this.soyJugadorA ? this.personajeA.puntuacion : this.personajeB.puntuacion;
+        const maxPuntos = 2000;
+        const porcentaje = Math.min((misPuntos / maxPuntos) * 100, 100);
+
+        const barWidth = 250;
+        const barHeight = 30;
+        const barX = 30;
+        const barY = 30;
+
+        this.ctx.font = "bold 24px Arial";
+        this.ctx.textAlign = "center";
+        this.ctx.fillStyle = "white";
+        this.ctx.strokeStyle = "black";
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeText(misPuntos, barX + barWidth / 2, barY - 8);
+        this.ctx.fillText(misPuntos, barX + barWidth / 2, barY - 8);
+
+        this.ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        this.ctx.fillRect(barX, barY, barWidth, barHeight);
+
+        this.ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+        const gradient = this.ctx.createLinearGradient(barX, barY, barX + barWidth, barY);
+        gradient.addColorStop(0, "#3b82f6");
+        gradient.addColorStop(1, "#8b5cf6");
+        this.ctx.fillStyle = gradient;
+        const currentBarWidth = (barWidth * porcentaje) / 100;
+        this.ctx.fillRect(barX, barY, currentBarWidth, barHeight);
+
         this.ctx.restore();
     }
     this.dibujarPersonaje = function (pj, img, colorBackup) {
@@ -174,7 +198,7 @@
         }
         if (ganadorServidor === "EMPATE") {
             if (huboChoque) {
-                mensaje = "¡Vaya tortazo! Los dos os habéis chocado a la vez.";
+                mensaje = "¡Vaya tortazo!<br>Los dos os habéis chocado a la vez.";
             } else {
                 mensaje = "¡Increíble! Empate sin choques.";
             }

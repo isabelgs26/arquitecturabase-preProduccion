@@ -1,3 +1,19 @@
+:root {
+    --color-primary: #3b82f6;
+    --color-primary-dark: #2563eb;
+    --color-secondary: #8b5cf6;
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+    --color-info: #06b6d4;
+    --color-dark: #0f172a;
+    --color-light: #f8fafc;
+    --color-text: #1e293b;
+    --color-text-light: #64748b;
+    --bg-overlay: rgba(15, 23, 42, 0.9);
+    --border-color: rgba(255, 255, 255, 0.1);
+}
+
 body {
     background-image: url('./img/fondo.jpg');
     background-size: cover;
@@ -28,9 +44,9 @@ hr {
 }
 
 .navbar {
-    background: rgba(15, 23, 42, 0.9) !important;
+    background: var(--bg-overlay) !important;
     backdrop-filter: blur(15px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .navbar-brand,
@@ -60,13 +76,13 @@ hr {
 }
 
 .navbar-nav .nav-link:hover {
-    color: #60a5fa !important;
+    color: var(--color-primary) !important;
     transform: scale(1.05);
 }
 
 #cerrarSesionItem .nav-link {
     font-size: 1.2rem;
-    color: #ff6b6b !important;
+    color: var(--color-danger) !important;
 }
 
 .dropdown-menu {
@@ -242,12 +258,12 @@ hr {
 }
 
 .btn-primary {
-    background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+    background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
 }
 
 .btn-primary:hover {
-    background: linear-gradient(45deg, #2563eb, #7c3aed);
+    background: linear-gradient(45deg, var(--color-primary-dark), #7c3aed);
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6);
 }
