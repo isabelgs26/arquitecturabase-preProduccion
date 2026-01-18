@@ -218,20 +218,20 @@ function WSServer(io) {
                 const codigo = socket.partidaCodigo;
                 const email = socket.email;
                 if (!codigo || !email) return;
+
+                // Verificar si hay un juego activo
                 const juego = juegos[codigo];
-                if (!juego) return;
 
-                juego.juegoTerminado = true;
-                socket.broadcast.to(codigo).emit("partidaAbandonada", { email, codigo });
-                clearInterval(juego.intervalo);
-                delete juegos[codigo];
-
-                sistema.eliminarPartida(codigo, email, function () {
-                    sistema.obtenerPartidasDisponibles(function (lista) {
-                        io.emit("listaPartidas", lista);
-                    });
-
-                });
+                if (juego && !juego.juegoTerminado) {
+                    // Partida EN JUEGO → abandono real (botón Salir de la partida del canvas)
+                    socket.broadcast.to(codigo).emit("partidaAbandonada", { email, codigo });
+                    juego.juegoTerminado = true;
+                    clearInterval(juego.intervalo);
+                    delete juegos[codigo];
+                } else {
+                    // Partida ya finalizada o no hay juego activo
+                    // No hacer nada, esto se maneja con salirDespuesDeFin
+                }
 
                 socket.leave(codigo);
                 socket.partidaCodigo = null;
@@ -342,22 +342,52 @@ function WSServer(io) {
                 socket.email = null;
             });
 
+            socket.on("salirDespuesDeFin", function () {
+                const codigo = socket.partidaCodigo;
+                const email = socket.email;
+
+                if (!codigo || !email) return;
+
+                // Notificar al rival que este jugador salió del modal de fin
+                socket.broadcast.to(codigo).emit("rivalSalioDespuesDeFin", { email, codigo });
+
+                // Limpiar el socket
+                socket.leave(codigo);
+                socket.partidaCodigo = null;
+                socket.email = null;
+            });
+
             socket.on("disconnect", function () {
                 const codigo = socket.partidaCodigo;
                 const email = socket.email;
+
                 if (!codigo || !email) return;
 
                 if (juegos[codigo]) {
-                    // Si hay un juego en curso, se abandonó
-                    io.to(codigo).emit("partidaAbandonada", { email, codigo });
-                    clearInterval(juegos[codigo].intervalo);
+                    const juego = juegos[codigo];
+
+                    if (juego.juegoTerminado) {
+                        // Partida ya terminada, solo salida
+                        io.to(codigo).emit("rivalSalioDespuesDeFin", { email, codigo });
+                    } else {
+                        // Partida en juego → abandono real (cerrar navegador durante juego)
+                        io.to(codigo).emit("partidaAbandonada", { email, codigo });
+                    }
+
+                    clearInterval(juego.intervalo);
                     delete juegos[codigo];
                 } else {
-                    // Si no hay juego en curso, podría ser durante revancha o espera
-                    io.to(codigo).emit("rivalAbandonoDuranteRevancha", { email, codigo });
-                    io.to(codigo).emit("rivalDesconectado", { email, codigo });
+                    // Si no hay juego en memoria
+                    if (socket.partidaFinalizada) {
+                        // Partida ya finalizada → salida normal
+                        io.to(codigo).emit("rivalSalioDespuesDeFin", { email, codigo });
+                    } else {
+                        // Partida en lobby o esperando rival
+                        io.to(codigo).emit("rivalDesconectado", { email, codigo });
+                    }
                 }
 
+                // Limpiar BD
                 sistema.eliminarPartida(codigo, email, function () {
                     sistema.obtenerPartidasDisponibles(lista => {
                         io.emit("listaPartidas", lista);
@@ -482,11 +512,43 @@ function WSServer(io) {
 
             io.to(codigo).emit("finPartida", { ganador, puntosA, puntosB });
             clearInterval(juego.intervalo);
+
+            // Marcar en todos los sockets que la partida finalizó
+            const sockets = io.sockets.adapter.rooms.get(codigo);
+            if (sockets) {
+                sockets.forEach(socketId => {
+                    const s = io.sockets.sockets.get(socketId);
+                    if (s) s.partidaFinalizada = true;
+                });
+            }
+
             delete juegos[codigo];
             return;
         }
 
-        io.to(codigo).emit("estadoJuego", juego);
+        io.to(codigo).emit("estadoJuego", {
+            jugadores: {
+                A: {
+                    x: juego.jugadores.A.x,
+                    y: juego.jugadores.A.y,
+                    puntuacion: juego.jugadores.A.puntuacion
+                },
+                B: {
+                    x: juego.jugadores.B.x,
+                    y: juego.jugadores.B.y,
+                    puntuacion: juego.jugadores.B.puntuacion
+                }
+            },
+            obstaculos: juego.obstaculos.map(o => ({
+                x: o.x,
+                y: o.y,
+                ancho: o.ancho,
+                alto: o.alto,
+                tipo: o.tipo
+            })),
+            velocidad: juego.velocidadActual
+        });
+
     }
 }
 

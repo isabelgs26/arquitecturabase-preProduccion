@@ -393,21 +393,10 @@ function ControlWeb() {
         });
     };
 
+    // 1. MODAL PRINCIPAL (DERROTA / VICTORIA)
     this.mostrarModalGameOver = function (yoGano, mensaje, puntosA, puntosB) {
-
-        let titulo = "RESULTADO";
-        let color = "secondary";
-
-        if (yoGano) {
-            titulo = "¡VICTORIA! 🏆";
-            color = "success";
-        } else if (mensaje.includes("EMPATE")) {
-            titulo = "¡EMPATE! 🤝";
-            color = "warning";
-        } else {
-            titulo = "¡DERROTA! 💀";
-            color = "danger";
-        }
+        let titulo = yoGano ? "¡VICTORIA! 🏆" : (mensaje.includes("EMPATE") ? "¡EMPATE! 🤝" : "¡DERROTA! 💀");
+        let color = yoGano ? "success" : (mensaje.includes("EMPATE") ? "warning" : "danger");
 
         let html = `
             <div class="modal fade" id="modalGameOver" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
@@ -417,8 +406,7 @@ function ControlWeb() {
                     <h2 class="modal-title font-weight-bold">${titulo}</h2>
                   </div>
                   <div class="modal-body">
-                    <h4 class="mb-4 text-dark">${mensaje}</h4>
-                    
+                    <h4 class="mb-4 text-dark" id="mensajeFin">${mensaje}</h4>
                     <div class="row">
                       <div class="col-6">
                         <h5 class="text-primary">Jugador A</h5>
@@ -435,167 +423,144 @@ function ControlWeb() {
                         VOLVER A JUGAR 🔄
                     </button>
                     <button type="button" class="btn btn-secondary btn-lg" id="btnSalirAlMenu">
-                        Salir al Menú
+                        Salir
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-        `;
+            </div>`;
+
         $("#modalGameOver").remove();
         $("body").append(html);
 
-        $("#btnReiniciarJuego").on("click", function () {
-            $("#modalGameOver").modal("hide");
-            if (ws && ws.socket) {
-                ws.socket.emit("solicitarRevancha");
-                cw.mostrarSolicitudRevancha();
-            }
+        // EVENTO: SOLICITAR REVANCHA (Jugador A)
+        $("#btnReiniciarJuego").off("click").on("click", function () {
+            if (ws && ws.socket) ws.socket.emit("solicitarRevancha");
+
+            // CAMBIO VISUAL: Spinner de espera en el mismo modal
+            let footer = $(this).closest('.modal-footer');
+            footer.html(`
+                <div class="w-100 text-center">
+                    <div class="spinner-border text-warning mb-2" role="status"></div>
+                    <h5 class="text-muted">⏳ Esperando contestación del rival...</h5>
+                </div>
+            `);
         });
 
-        $("#btnSalirAlMenu").on("click", function () {
-            $("#modalGameOver").modal("hide");
-            // Rechazar la revancha implícitamente al salir al menú
+        // EVENTO: SALIR (desde modal de fin de juego)
+        $("#btnSalirAlMenu").off("click").on("click", function () {
+            // Emitir evento al servidor indicando que salió del modal de fin
             if (ws && ws.socket) {
-                ws.socket.emit("rechazarRevancha");
+                ws.socket.emit("salirDespuesDeFin");
             }
-            setTimeout(() => {
-                location.reload();
-            }, 500);
+            setTimeout(() => location.reload(), 300);
         });
 
         $("#modalGameOver").modal("show");
+    };
 
-    }
-
-    this.mostrarSolicitudRevancha = function () {
-        this.limpiar();
-
-        let html = `
-        <div class="container mt-5">
-            <div class="row justify-content-center">
-                <div class="col-md-6">
-                    <div class="card border-warning" style="border-width: 3px;">
-                        <div class="card-header bg-warning text-dark text-center">
-                            <h3 class="mb-0">⚔️ REVANCHA SOLICITADA</h3>
-                        </div>
-                        <div class="card-body text-center">
-                            <div class="spinner-border text-warning mb-3" role="status" style="width: 3rem; height: 3rem;">
-                                <span class="sr-only">Esperando...</span>
-                            </div>
-                            <p style="color: white; font-size: 1.2rem; margin-top: 15px;">
-                                Esperando que el rival acepte la revancha...
-                            </p>
-                            <button id="btnCancelarRevancha" class="btn btn-secondary btn-lg mt-4">
-                                Cancelar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-
-        $("#au").html(html);
-
-        $("#btnCancelarRevancha").on("click", function () {
-            if (ws && ws.socket) {
-                ws.socket.emit("cancelarRevancha");
-            }
-            cw.mostrarHome($.cookie("nick"));
-        });
-    }
-
-    this.mostrarRivalaceptaRevancha = function () {
-        this.limpiar();
-
-        let html = `
-        <div class="container mt-5">
-            <div class="row justify-content-center">
-                <div class="col-md-6">
-                    <div class="card border-success" style="border-width: 3px;">
-                        <div class="card-header bg-success text-white text-center">
-                            <h3 class="mb-0">✅ ¡EL RIVAL ACEPTÓ!</h3>
-                        </div>
-                        <div class="card-body text-center">
-                            <p style="color: white; font-size: 1.3rem; margin: 30px 0;">
-                                La revancha está lista...
-                            </p>
-                            <div class="spinner-border text-success" role="status" style="width: 3rem; height: 3rem;">
-                                <span class="sr-only">Cargando...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-
-        $("#au").html(html);
-    }
-
+    // 2. MODAL CUANDO RECIBES SOLICITUD (Jugador B)
+    // ESTA FUNCIÓN YA NO CREA VENTANAS NUEVAS, SOLO TRANSFORMA LA ACTUAL
     this.mostrarSolicitudRivalRevancha = function () {
-        this.limpiar();
+        let modal = $("#modalGameOver");
 
-        let html = `
-        <div class="container mt-5">
-            <div class="row justify-content-center">
-                <div class="col-md-6">
-                    <div class="card border-info" style="border-width: 3px;">
-                        <div class="card-header bg-info text-white text-center">
-                            <h3 class="mb-0">🎮 REVANCHA SOLICITADA</h3>
-                        </div>
-                        <div class="card-body text-center">
-                            <p style="color: white; font-size: 1.2rem; margin: 30px 0;">
-                                Tu rival solicita una revancha...
-                            </p>
-                            <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-success btn-lg" id="btnAceptarRevancha">
-                                    Aceptar ✅
-                                </button>
-                                <button type="button" class="btn btn-danger btn-lg" id="btnRechazarRevancha">
-                                    Rechazar ❌
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>`;
+        if (!modal.hasClass('show')) modal.modal('show');
 
-        $("#au").html(html);
+        // Transformar modal a Azul
+        let header = modal.find('.modal-header');
+        header.removeClass('bg-danger bg-success bg-warning').addClass('bg-info');
+        header.find('.modal-title').html("⚔️ REVANCHA SOLICITADA");
 
-        $("#btnAceptarRevancha").on("click", function () {
-            if (ws && ws.socket) {
-                ws.socket.emit("aceptarRevancha");
-            }
-            cw.mostrarRivalaceptaRevancha();
+        $("#mensajeFin").html("Tu rival quiere volver a jugar. ¿Aceptas?");
+
+        let footer = modal.find('.modal-footer');
+        footer.html(`
+            <button id="btnAceptarRevancha" class="btn btn-success btn-lg mr-3">Aceptar ✅</button>
+            <button id="btnRechazarRevancha" class="btn btn-danger btn-lg">Rechazar ❌</button>
+        `);
+
+        // ACEPTAR
+        $("#btnAceptarRevancha").off("click").on("click", function () {
+            if (ws && ws.socket) ws.socket.emit("aceptarRevancha");
+            footer.html('<div class="text-success font-weight-bold">¡Aceptando...!</div>');
         });
 
-        $("#btnRechazarRevancha").on("click", function () {
-            if (ws && ws.socket) {
-                ws.socket.emit("rechazarRevancha");
-            }
+        // RECHAZAR (Aquí está el cambio importante)
+        $("#btnRechazarRevancha").off("click").on("click", function () {
+            // 1. Avisar al servidor
+            if (ws && ws.socket) ws.socket.emit("rechazarRevancha");
+
+            // 2. Cerrar modal inmediatamente
+            $("#modalGameOver").modal("hide");
+            $('body').removeClass('modal-open');
+            $('.modal-backdrop').remove();
+
+            // 3. Ir al lobby
             cw.mostrarHome($.cookie("nick"));
         });
-    }
+    };
+
+    // 3. CUANDO EL RIVAL ACEPTA (Para ambos)
+    this.mostrarRivalaceptaRevancha = function () {
+        // Simplemente mostramos un mensaje de éxito antes de que el servidor reinicie la partida
+        let modal = $("#modalGameOver");
+        let footer = modal.find('.modal-footer');
+        footer.html(`
+            <div class="text-success font-weight-bold">
+                ✅ ¡Rival listo! Reiniciando...
+                <div class="spinner-border spinner-border-sm ml-2"></div>
+            </div>
+        `);
+        // El servidor enviará 'juegoReiniciado' en breve y eso cerrará/limpiará todo
+    };
+
+
 
     this.mostrarRivalRechazoRevancha = function () {
-        // Mostrar modal con el mensaje
-        let mBody = document.getElementById("mBody");
-        mBody.innerHTML = `
-            <div style="text-align: center;">
-                <h4 style="color: #ff6b6b; margin-bottom: 20px;">❌ Revancha Rechazada</h4>
-                <p>Tu rival ha rechazado la solicitud de revancha.</p>
-                <p style="margin-top: 15px; font-size: 0.9rem; color: #666;">Puedes intentar desafiar a otro jugador cuando lo desees.</p>
+        // 1. Cerramos el modal anterior (donde estaba el spinner esperando)
+        $("#modalGameOver").modal("hide");
+
+        // Limpieza forzosa de fondos de bootstrap por si acaso
+        $('body').removeClass('modal-open');
+        $('.modal-backdrop').remove();
+
+        // 2. HTML EXACTO DE TU DISEÑO (Modal Oscuro)
+        let html = `
+        <div class="modal fade" id="modalAtencion" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content" style="background-color: #1a1a2e; color: white; border: 1px solid #444;">
+                    <div class="modal-header" style="border-bottom: none;">
+                        <h5 class="modal-title" style="color: #a8a8ff; font-weight: bold;">Atención</h5>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div style="font-size: 3rem; margin-bottom: 10px;">❌</div>
+                        <h4 style="font-weight: bold; margin-bottom: 15px;">Revancha Rechazada</h4>
+                        <p>Tu rival ha rechazado la solicitud de revancha.</p>
+                        <p class="text-muted" style="font-size: 0.9em;">Puedes intentar desafiar a otro jugador cuando lo desees.</p>
+                    </div>
+                    <div class="modal-footer" style="border-top: none; justify-content: center;">
+                        <button type="button" id="btnCerrarRechazo" class="btn btn-danger btn-lg" style="min-width: 120px;">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
             </div>
-        `;
+        </div>`;
 
-        $("#miModal").modal("show");
+        $("#modalAtencion").remove(); // Borrar si ya existía
+        $("body").append(html);
+        $("#modalAtencion").modal("show");
 
-        // Cuando se cierre el modal, volver a home
-        $("#miModal").off("hide.bs.modal").on("hide.bs.modal", function () {
+        // 3. Lógica del botón CERRAR: Solo al pulsarlo vuelve al lobby
+        $("#btnCerrarRechazo").on("click", function () {
+            $("#modalAtencion").modal("hide");
+            $('body').removeClass('modal-open');
+            $('.modal-backdrop').remove();
+
+            // Volver al lobby
             cw.mostrarHome($.cookie("nick"));
         });
-    }
+    };
 
     this.mostrarRivalAbandonoRevancha = function () {
         this.limpiar();
@@ -680,6 +645,36 @@ function ControlWeb() {
             this.mostrarMensaje("Email o contraseña incorrectos", "error");
             $("#emailAcceso").val("");
             $("#passwordAcceso").val("");
+        }
+    };
+
+
+    this.gestionarSalidaRivalFin = function () {
+        let modal = $("#modalGameOver");
+        let footer = modal.find('.modal-footer');
+
+        // Ocultar botón de VOLVER A JUGAR
+        $("#btnReiniciarJuego").remove();
+
+        // Actualizar el contenido del footer para mostrar solo Salir
+        if (footer.find('#msgRivalIdo').length === 0) {
+            footer.html(`
+                <div id="msgRivalIdo" class="text-muted w-100 mb-2 text-center">
+                    <p>❌ El rival ha salido de la partida.</p>
+                    <small>Solo puedes salir al menú principal.</small>
+                </div>
+                <button type="button" class="btn btn-secondary btn-lg" id="btnSalirAlMenu">
+                    Salir
+                </button>
+            `);
+
+            // Re-enlazar el evento del botón Salir
+            $("#btnSalirAlMenu").off("click").on("click", function () {
+                if (ws && ws.socket) {
+                    ws.socket.emit("salirDespuesDeFin");
+                }
+                setTimeout(() => location.reload(), 300);
+            });
         }
     };
 }

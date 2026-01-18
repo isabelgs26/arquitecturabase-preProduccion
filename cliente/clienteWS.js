@@ -99,6 +99,18 @@ function ClienteWS() {
             if (juego) juego.juegoTerminado = true;
             cli.codigo = undefined;
         });
+
+        this.socket.on("jugadorSalioDelLobby", function (datos) {
+            // Partida ya finalizada, el rival se salió del lobby
+            // Deshabilitar el botón de volver a jugar
+            $("#btnReiniciarJuego").prop("disabled", true).addClass("disabled").text("El rival se ha ido");
+
+            // Si no hay modal abierto, solo limpiar código
+            if (!$("#modalGameOver").is(":visible")) {
+                cli.codigo = undefined;
+            }
+        });
+
         this.socket.on("partidaEliminadaPorCreador", function () {
             if (juego) juego.juegoTerminado = true;
             if (cw) cw.mostrarModal("La partida fue eliminada por el creador");
@@ -156,7 +168,15 @@ function ClienteWS() {
             if (cw) cw.mostrarRivalAbandonoRevancha();
         });
 
+        this.socket.on("rivalSalioDespuesDeFin", function () {
+            console.log("El rival ha salido tras finalizar.");
+            if (cw) {
+                cw.gestionarSalidaRivalFin();
+            }
+        });
+
     };
+
 
     this.crearPartida = function () {
         this.socket.emit("crearPartida", { "email": this.email });
