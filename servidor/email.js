@@ -1,20 +1,15 @@
-const nodemailer = require('nodemailer');
+﻿const nodemailer = require('nodemailer');
 const gestor = require('./gestorVariables');
-
-const url = process.env.URL_BASE || "http://localhost:3000/";
-
+const url = process.env.URL_BASE || "http://localhost:3000";
 let transporter;
-
 exports.inicializarTransporter = async function () {
     if (transporter) return;
-
     try {
         const opts = await new Promise((resolve) => {
             gestor.obtenerOptions(function (opt) {
                 resolve(opt);
             });
         });
-
         transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -22,13 +17,11 @@ exports.inicializarTransporter = async function () {
                 pass: opts.pass
             }
         });
-
         console.log("Transporter de Nodemailer inicializado con secretos de GCP.");
     } catch (error) {
         console.error("Fallo al inicializar el transporter:", error.message);
     }
 };
-
 module.exports.enviarEmail = async function (direccion, key, asunto) {
     if (!transporter) {
         await exports.inicializarTransporter();
@@ -37,9 +30,7 @@ module.exports.enviarEmail = async function (direccion, key, asunto) {
             return;
         }
     }
-
     const confirmLink = `${url.replace(/\/$/, "")}/confirmarUsuario/${direccion}/${key}`;
-
     const htmlContent = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
             <div style="background-color: #343a40; color: #ffffff; padding: 20px; text-align: center;">
@@ -61,7 +52,6 @@ module.exports.enviarEmail = async function (direccion, key, asunto) {
             </div>
         </div>
     `;
-
     try {
         const result = await transporter.sendMail({
             from: transporter.options.auth.user,

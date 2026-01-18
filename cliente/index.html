@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 
 <head>
@@ -93,11 +93,11 @@
     </div>
 
 
-    <!--GOOGLE_ONE_TAP_START-->
+
     <div id="g_id_onload" data-client_id="GOOGLE_CLIENT_ID_PLACEHOLDER" data-login_uri="DATA_LOGIN_URI_PLACEHOLDER"
-        data-auto_prompt="true" data-context="signin">
+        data-context="signin">
     </div>
-    <!--GOOGLE_ONE_TAP_END-->
+
 
     <div class="modal" id="miModal">
         <div class="modal-dialog">
@@ -158,22 +158,28 @@
             window.addEventListener('resize', ajustarCanvasResponsivo);
             ajustarCanvasResponsivo();
 
-            // Inicializar Google One Tap
             const onLoadDiv = document.getElementById('g_id_onload');
-            if (onLoadDiv && window.google && window.google.accounts && window.google.accounts.id) {
-                const clientId = onLoadDiv.getAttribute('data-client_id');
-                const loginUri = onLoadDiv.getAttribute('data-login_uri');
+            const nick = $.cookie("nick");
 
-                if (clientId && clientId !== 'GOOGLE_CLIENT_ID_PLACEHOLDER' && loginUri && loginUri !== 'DATA_LOGIN_URI_PLACEHOLDER') {
-                    window.google.accounts.id.initialize({
-                        client_id: clientId,
-                        callback: handleOneTapSignIn,
-                        auto_select: false,
-                        cancel_on_tap_outside: false
-                    });
+            if (window.google && window.google.accounts && window.google.accounts.id) {
+                if (nick) {
+                    console.log("Usuario autenticado, cancelando One Tap");
+                    window.google.accounts.id.cancel();
+                } else if (onLoadDiv) {
+                    const clientId = onLoadDiv.getAttribute('data-client_id');
+                    const loginUri = onLoadDiv.getAttribute('data-login_uri');
 
-                    // Mostrar One Tap siempre
-                    window.google.accounts.id.prompt();
+                    if (clientId && clientId !== 'GOOGLE_CLIENT_ID_PLACEHOLDER' && loginUri && loginUri !== 'DATA_LOGIN_URI_PLACEHOLDER') {
+                        window.google.accounts.id.initialize({
+                            client_id: clientId,
+                            callback: handleOneTapSignIn,
+                            auto_select: false,
+                            cancel_on_tap_outside: false
+                        });
+
+                        console.log("Sin sesión, mostrando One Tap");
+                        window.google.accounts.id.prompt();
+                    }
                 }
             }
         });

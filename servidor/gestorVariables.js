@@ -1,8 +1,6 @@
-const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
+﻿const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 const client = new SecretManagerServiceClient();
-
 const PROJECT_ID = '375522614359';
-
 async function accessMONGO_URI() {
     const name = `projects/${PROJECT_ID}/secrets/MONGO_URI/versions/latest`;
     try {
@@ -29,8 +27,6 @@ async function accessCLAVECORREO() {
         return null;
     }
 }
-
-
 async function accessCORREO() {
     const name = `projects/${PROJECT_ID}/secrets/CORREO/versions/latest`;
     try {
@@ -45,20 +41,13 @@ async function accessCORREO() {
         return null;
     }
 }
-
-
 module.exports.obtenerOptions = async function (callback) {
     let options = { user: "", pass: "" };
-
     let pass = await accessCLAVECORREO();
     let user = await accessCORREO();
-
     options.user = user;
     options.pass = pass;
-
     console.log(`[GV] Options cargadas: User: ${options.user}, Pass: [Secreta, ${options.pass ? options.pass.length : 0} chars]`);
-
     callback(options);
 }
-
 module.exports.obtenerMongoURI = accessMONGO_URI;

@@ -1,72 +1,54 @@
-function CAD() {
+﻿function CAD() {
     const mongo = require("mongodb").MongoClient;
     const ObjectId = require("mongodb").ObjectId;
     const gv = require('./gestorVariables.js');
-
     this.usuarios = null;
     this.logs = null;
     this.partidas = null;
-
     this.conectar = async function () {
         let cad = this;
-
         const mongoUrl = await gv.obtenerMongoURI();
-
         if (!mongoUrl) {
             console.error("Error: MONGODB_URI no se pudo cargar desde Secret Manager.");
             throw new Error("No se pudo conectar a la base de datos");
         }
-
         let client = new mongo(mongoUrl, { useUnifiedTopology: true });
-
         try {
             await client.connect();
             const database = client.db("sistema");
             cad.usuarios = database.collection("usuarios");
             cad.logs = database.collection("logs");
             cad.partidas = database.collection("partidas");
-
             console.log("Conexión a MongoDB establecida (Usuarios y Logs listos).");
-
-
         } catch (err) {
             console.error("Error al conectar a MongoDB (cad.js):", err);
             throw new Error("No se pudo conectar a la base de datos");
         }
     }
-
     this.buscarOCrearUsuario = function (usr, callback) {
         buscarOCrear(this.usuarios, usr, callback);
     }
-
     this.actualizarUsuario = function (obj, callback) {
         actualizar(this.usuarios, obj, callback);
     }
-
     this.buscarUsuario = function (criterio, callback) {
         buscar(this.usuarios, criterio, callback);
     }
-
     this.buscarUsuarios = function (criterio, callback) {
         buscarPlural(this.usuarios, criterio, callback);
     }
-
     this.insertarUsuario = function (usuario, callback) {
         insertar(this.usuarios, usuario, callback);
     }
-
     this.eliminarUsuario = function (criterio, callback) {
         eliminarUno(this.usuarios, criterio, callback);
     }
-
     this.contarUsuarios = function (criterio, callback) {
         contar(this.usuarios, criterio, callback);
     }
-
     this.insertarLog = function (registro, callback) {
         insertar(this.logs, registro, callback);
     }
-
     this.obtenerLogs = function (callback) {
         if (!this.logs) return callback([]);
         this.logs.find({}).toArray(function (err, result) {
@@ -77,19 +59,15 @@ function CAD() {
             callback(result);
         });
     }
-
     this.insertarPartida = function (partida, callback) {
         insertar(this.partidas, partida, callback);
     }
-
     this.obtenerPartida = function (codigo, callback) {
         buscar(this.partidas, { codigo: codigo }, callback);
     }
-
     this.eliminarPartida = function (codigo, callback) {
         eliminarUno(this.partidas, { codigo: codigo }, callback);
     }
-
     this.actualizarPartida = function (codigo, actualizacion, callback) {
         this.partidas.findOneAndUpdate(
             { codigo: codigo },
@@ -104,11 +82,8 @@ function CAD() {
             }
         );
     }
-
-
     this.obtenerPartidasDisponibles = function (callback) {
         if (!this.partidas) return callback([]);
-
         this.partidas.find({
             $expr: { $lt: [{ $size: "$jugadores" }, "$maxJug"] }
         }).toArray(function (err, result) {
@@ -119,10 +94,6 @@ function CAD() {
             callback(result);
         });
     }
-
-
-    // --- FUNCIONES PRIVADAS ---
-
     function buscarOCrear(coleccion, criterio, callback) {
         const query = { email: criterio.email };
         const update = { $set: criterio };
@@ -131,7 +102,6 @@ function CAD() {
             returnDocument: "after",
             projection: { email: 1, nombre: 1 }
         };
-
         coleccion.findOneAndUpdate(query, update, options, function (err, doc) {
             if (err) {
                 console.error("DEBUG (cad.js): Error en findOneAndUpdate:", err);
@@ -144,7 +114,6 @@ function CAD() {
             }
         });
     }
-
     function actualizar(coleccion, obj, callback) {
         coleccion.findOneAndUpdate(
             { _id: ObjectId(obj._id) },
@@ -159,8 +128,6 @@ function CAD() {
             }
         );
     }
-
-
     function buscar(coleccion, criterio, callback) {
         if (!coleccion) { return callback(new Error("Colección no inicializada")); }
         coleccion.find(criterio).toArray(function (error, usuarios) {
@@ -171,7 +138,6 @@ function CAD() {
             callback(usuarios[0]);
         });
     }
-
     function buscarPlural(coleccion, criterio, callback) {
         if (!coleccion) { return callback(new Error("Colección no inicializada")); }
         coleccion.find(criterio).toArray(function (error, usuarios) {
@@ -182,13 +148,11 @@ function CAD() {
             callback(usuarios);
         });
     }
-
     function insertar(coleccion, elemento, callback) {
         if (!coleccion) { return callback(new Error("Colección no inicializada")); }
         coleccion.insertOne(elemento, function (err, result) {
             if (err) {
                 console.error("Error en 'insertar' (cad.js):", err);
-                // Si hay callback, lo llamamos con null o error
                 if (callback) return callback(null);
                 else return;
             }
@@ -196,7 +160,6 @@ function CAD() {
             if (callback) callback(elemento);
         });
     }
-
     function eliminarUno(coleccion, criterio, callback) {
         if (!coleccion) { return callback(new Error("Colección no inicializada")); }
         coleccion.deleteOne(criterio, function (err, result) {
@@ -207,7 +170,6 @@ function CAD() {
             callback({ eliminado: result.deletedCount });
         });
     }
-
     function contar(coleccion, criterio, callback) {
         if (!coleccion) { return callback(new Error("Colección no inicializada")); }
         coleccion.countDocuments(criterio, function (err, count) {
@@ -219,5 +181,4 @@ function CAD() {
         });
     }
 }
-
 module.exports.CAD = CAD;
