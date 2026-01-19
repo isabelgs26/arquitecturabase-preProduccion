@@ -122,7 +122,8 @@
                             obstaculos: [],
                             juegoTerminado: false,
                             velocidadActual: VELOCIDAD_INICIAL,
-                            ultimoObstaculo: 0
+                            ultimoObstaculo: 0,
+                            tiempoInicio: Date.now()
                         };
                         io.to(codigo).emit("juegoIniciado", {
                             codigo,
@@ -145,6 +146,7 @@
                 juego.obstaculos = [];
                 juego.velocidadActual = VELOCIDAD_INICIAL;
                 juego.ultimoObstaculo = 0;
+                juego.tiempoInicio = Date.now();
                 juego.jugadores = {
                     A: { x: 100, y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 },
                     B: { x: 100, y: SUELO_Y, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 }
@@ -218,7 +220,8 @@
                         obstaculos: [],
                         juegoTerminado: false,
                         velocidadActual: VELOCIDAD_INICIAL,
-                        ultimoObstaculo: 0
+                        ultimoObstaculo: 0,
+                        tiempoInicio: Date.now()
                     };
                     io.to(codigo).emit("revanchaAceptada", {
                         codigo,
@@ -357,11 +360,27 @@
             return;
         }
         juego.obstaculos = juego.obstaculos.filter(o => o.x + (o.ancho || 50) > -100);
-        const tiempoEspera = Math.max(500, TIEMPO_MIN_OBSTACULOS_BASE - (juego.velocidadActual * 40));
+
+        // Calcular nivel de dificultad basado en puntos (cada 200 puntos aumenta)
+        const nivelDificultad = Math.floor(maxPuntos / 200);
+
+        // Tiempo entre obstáculos que disminuye con la dificultad
+        // Inicia en 1800ms y reduce 150ms por nivel (mínimo 600ms)
+        const tiempoBase = 1800 - (nivelDificultad * 150);
+        const tiempoEspera = Math.max(600, tiempoBase);
+
+        // Probabilidad de aparición que aumenta con la dificultad
+        // Inicia en 0.6 (60%) y aumenta 0.05 por nivel (máximo 0.95)
+        const probabilidadBase = 0.6 + (nivelDificultad * 0.05);
+        const probabilidadObstaculo = Math.min(0.95, probabilidadBase);
+
         const ahora = Date.now();
-        if (ahora - juego.ultimoObstaculo > tiempoEspera) {
+        const tiempoDesdeInicio = ahora - (juego.tiempoInicio || ahora);
+        const LATENCIA_INICIAL_MS = 16000; // 16 segundos de latencia (20 seg total con countdown de 4s)
+
+        if (tiempoDesdeInicio >= LATENCIA_INICIAL_MS && ahora - juego.ultimoObstaculo > tiempoEspera) {
             juego.ultimoObstaculo = ahora;
-            if (Math.random() < (0.15 + (juego.velocidadActual * 0.003))) {
+            if (Math.random() < probabilidadObstaculo) {
                 let randomTipo = Math.random();
                 const Y_RAS_SUELO = SUELO_Y + 50;
                 let nuevoObstaculo = {

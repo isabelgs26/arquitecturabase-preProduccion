@@ -16,6 +16,7 @@
     this.gravedad = 0.8;
     this.fuerzaSalto = -20;
     this.particulas = [];
+    this.velocidadActual = 6;
     this.imgPersonajeA = new Image();
     this.imgPersonajeA.src = "img/personajeA.png";
     this.imgPersonajeB = new Image();
@@ -101,7 +102,7 @@
                 count--;
                 setTimeout(updateCount, 1000);
             } else {
-                countText.textContent = '¡GO!';
+                countText.textContent = '¡YA!';
                 countText.style.color = '#10b981';
                 countText.style.textShadow = '0 0 30px #10b981, 0 0 60px #10b981';
                 countText.style.animation = 'none';
@@ -211,9 +212,24 @@
         this.ctx.lineWidth = 2;
         this.ctx.strokeRect(barX, barY, barWidth, barHeight);
 
+        // Calcular color según velocidad (6 = azul, 16 = rojo)
+        const velocidadNormalizada = Math.min(Math.max((this.velocidadActual - 6) / 10, 0), 1);
         const gradient = this.ctx.createLinearGradient(barX, barY, barX + barWidth, barY);
-        gradient.addColorStop(0, "#3b82f6");
-        gradient.addColorStop(1, "#8b5cf6");
+        
+        if (velocidadNormalizada < 0.33) {
+            // Nivel bajo: Azul a Cyan
+            gradient.addColorStop(0, "#3b82f6");
+            gradient.addColorStop(1, "#06b6d4");
+        } else if (velocidadNormalizada < 0.66) {
+            // Nivel medio: Cyan a Naranja
+            gradient.addColorStop(0, "#06b6d4");
+            gradient.addColorStop(1, "#f97316");
+        } else {
+            // Nivel alto: Naranja a Rojo
+            gradient.addColorStop(0, "#f97316");
+            gradient.addColorStop(1, "#dc2626");
+        }
+        
         this.ctx.fillStyle = gradient;
         const currentBarWidth = (barWidth * porcentaje) / 100;
         this.ctx.fillRect(barX, barY, currentBarWidth, barHeight);
@@ -290,7 +306,7 @@
             if (huboChoque) {
                 mensaje = "¡Vaya tortazo!<br>Los dos os habéis chocado a la vez.";
             } else {
-                mensaje = "¡Increíble! Empate sin choques.";
+                mensaje = "¡Increíble!<br>Ambos habéis alcanzado los 2000 puntos.";
             }
         }
         else {
@@ -339,6 +355,9 @@
             img: this.imgObstaculos[o.tipo]
         }));
         this.juegoTerminado = estado.juegoTerminado;
+        if (estado.velocidad) {
+            this.velocidadActual = estado.velocidad;
+        }
     }
     this.crearPolvo = function (x, y) {
         for (let i = 0; i < 10; i++) {
