@@ -7,6 +7,7 @@
     this.soyJugadorA = false;
     this.obstaculos = [];
     this.juegoTerminado = false;
+    this.juegoIniciado = false;
     this.anchoP = 80;
     this.altoP = 130;
     this.sueloY = 350;
@@ -66,8 +67,10 @@
     this.iniciar = function (soyA) {
         this.soyJugadorA = soyA;
         if (!this.canvas) this.ini();
+        this.juegoIniciado = false;
 
         this.mostrarCountdown(() => {
+            this.juegoIniciado = true;
             this.musicaFondo.currentTime = 0;
             this.musicaFondo.play().catch(e => console.log("Haz click en la web para activar audio"));
             this.videoFondo.play().catch(e => console.log("Error video fondo:", e));
@@ -128,8 +131,10 @@
     }
     this.actualizar = function () {
         if (this.juegoTerminado) return;
-        this.aplicarFisica(this.personajeA);
-        this.aplicarFisica(this.personajeB);
+        if (this.juegoIniciado) {
+            this.aplicarFisica(this.personajeA);
+            this.aplicarFisica(this.personajeB);
+        }
         this.dibujar();
         this.bucle = requestAnimationFrame(() => this.actualizar());
     }
