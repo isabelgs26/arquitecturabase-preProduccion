@@ -273,6 +273,13 @@
                 socket.partidaCodigo = null;
                 socket.email = null;
             });
+            socket.on("forzarFinPartidaTest", function (datos) {
+                const codigo = socket.partidaCodigo;
+                if (!codigo || !juegos[codigo]) return;
+                juegos[codigo].juegoTerminado = true;
+                clearInterval(juegos[codigo].intervalo);
+                io.to(codigo).emit("finPartida", datos);
+            });
             socket.on("disconnect", function () {
                 const codigo = socket.partidaCodigo;
                 const email = socket.email;
