@@ -6,26 +6,34 @@
     this.bucle = null;
     this.soyJugadorA = false;
     this.obstaculos = [];
+
     this.juegoTerminado = false;
     this.juegoIniciado = false;
+
     this.anchoP = 80;
     this.altoP = 130;
     this.sueloY = 350;
+
     this.personajeA = { x: 100, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 };
     this.personajeB = { x: 100, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 };
+
     this.gravedad = 0.8;
     this.fuerzaSalto = -20;
+
     this.particulas = [];
     this.velocidadActual = 6;
+
     this.imgPersonajeA = new Image();
     this.imgPersonajeA.src = "img/personajeA.png";
     this.imgPersonajeB = new Image();
     this.imgPersonajeB.src = "img/personajeB.png";
+
     this.videoFondo = document.createElement("video");
     this.videoFondo.src = "video/fondo.mp4";
     this.videoFondo.muted = true;
     this.videoFondo.loop = true;
     this.videoFondo.setAttribute("playsinline", "");
+
     this.imgObstaculos = {
         obstaculoA: new Image(),
         obstaculoB: new Image(),
@@ -34,11 +42,13 @@
     this.imgObstaculos.obstaculoA.src = "img/obstaculoA.png";
     this.imgObstaculos.obstaculoB.src = "img/obstaculoB.png";
     this.imgObstaculos.obstaculoC.src = "img/obstaculoC.png";
+
     this.sonidoSalto = new Audio("audio/salto.mp3");
     this.sonidoCrash = new Audio("audio/crash.mp3");
     this.musicaFondo = new Audio("audio/musica.mp3");
     this.musicaFondo.loop = true;
     this.musicaFondo.volume = 0.2;
+
     this.ini = function () {
         this.canvas = document.getElementById("miCanvas");
         this.canvas.width = this.ancho;
@@ -55,6 +65,7 @@
         });
         this.canvas.addEventListener("touchstart", function (e) {
             e.preventDefault();
+            juego.saltar();
         }, { passive: false });
         $("#btnSalirJuego").click(function () {
             if (ws && ws.socket) {
@@ -73,8 +84,8 @@
         this.mostrarCountdown(() => {
             this.juegoIniciado = true;
             this.musicaFondo.currentTime = 0;
-            this.musicaFondo.play().catch(e => console.log("Haz click en la web para activar audio"));
-            this.videoFondo.play().catch(e => console.log("Error video fondo:", e));
+            this.musicaFondo.play().catch(() => { });
+            this.videoFondo.play().catch(() => { });
             if (this.bucle) cancelAnimationFrame(this.bucle);
             this.bucle = requestAnimationFrame(() => this.actualizar());
         });
@@ -116,6 +127,7 @@
         };
         updateCount();
     }
+
     this.saltar = function () {
         let miPersonaje = this.soyJugadorA ? this.personajeA : this.personajeB;
         if (miPersonaje.contadorSaltos < 2) {
@@ -215,7 +227,7 @@
         // Calcular color según velocidad (6 = azul, 16 = rojo)
         const velocidadNormalizada = Math.min(Math.max((this.velocidadActual - 6) / 10, 0), 1);
         const gradient = this.ctx.createLinearGradient(barX, barY, barX + barWidth, barY);
-        
+
         if (velocidadNormalizada < 0.33) {
             // Nivel bajo: Azul a Cyan
             gradient.addColorStop(0, "#3b82f6");
@@ -229,7 +241,7 @@
             gradient.addColorStop(0, "#f97316");
             gradient.addColorStop(1, "#dc2626");
         }
-        
+
         this.ctx.fillStyle = gradient;
         const currentBarWidth = (barWidth * porcentaje) / 100;
         this.ctx.fillRect(barX, barY, currentBarWidth, barHeight);
@@ -331,9 +343,9 @@
         this.personajeA = { x: 100, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 };
         this.personajeB = { x: 100, y: this.sueloY, vy: 0, saltando: false, puntuacion: 0, contadorSaltos: 0 };
         this.musicaFondo.currentTime = 0;
-        this.musicaFondo.play().catch(e => console.log("Haz click en la web para activar audio"));
+        this.musicaFondo.play().catch(() => { });
         this.videoFondo.currentTime = 0;
-        this.videoFondo.play().catch(e => console.log("Error video fondo:", e));
+        this.videoFondo.play().catch(() => { });
         if (this.bucle) cancelAnimationFrame(this.bucle);
         this.bucle = requestAnimationFrame(() => this.actualizar());
     }

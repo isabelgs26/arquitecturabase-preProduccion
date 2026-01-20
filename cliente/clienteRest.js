@@ -22,7 +22,7 @@
                 if (data.nick != -1) {
                     console.log("Usuario registrado");
                     cw.limpiar();
-                    cw.mostrarModal("Registro exitoso. Por favor inicia sesión.", "exito");
+                    cw.mostrarModal("Por favor, accede a tu correo para verificar tu cuenta.", "exito");
                     cw.mostrarAcceso();
                 } else {
                     cw.mostrarModal("El usuario ya existe", "error");

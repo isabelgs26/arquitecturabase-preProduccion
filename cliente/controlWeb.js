@@ -337,7 +337,7 @@
             }
         </style>
         <div class="modal fade show" id="modalAbandono" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false" style="display: block; background: rgba(0,0,0,0.7);">
-            <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 480px; transform: scale(0.8);">
                 <div class="modal-content text-center" style="background: linear-gradient(145deg, #1a1f35 0%, #0f1419 100%); color: white; border: 2px solid #ef4444; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.8);">
                     <div class="modal-header justify-content-center text-white" style="background: linear-gradient(135deg, #ef4444, #dc2626); border: none; border-radius: 18px 18px 0 0; padding: 25px;">
                         <h2 class="modal-title font-weight-bold" style="font-size: 2.2rem; text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 2px rgba(255,255,255,0.3);">🚫 Partida Finalizada</h2>
@@ -433,7 +433,7 @@
                 }
             </style>
             <div class="modal fade" id="modalGameOver" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
-              <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 560px; transform: scale(0.8);">
                 <div class="modal-content text-center" style="background: linear-gradient(145deg, #1a1f35 0%, #0f1419 100%); color: white; border: 2px solid ${colorHeader}; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.8);">
                   <div class="modal-header justify-content-center text-white" style="background: ${colorHeader}; border: none; border-radius: 18px 18px 0 0; padding: 25px;">
                     <h2 class="modal-title font-weight-bold" style="font-size: 2.2rem; text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 2px rgba(255,255,255,0.3);">${titulo}</h2>
@@ -563,7 +563,7 @@
         $('.modal-backdrop').remove();
         let html = `
         <div class="modal fade" id="modalAtencion" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
-            <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 400px; transform: scale(0.8);">
                 <div class="modal-content" style="background-color: #1a1a2e; color: white; border: 1px solid #444;">
                     <div class="modal-header" style="border-bottom: none;">
                         <h5 class="modal-title" style="color: #a8a8ff; font-weight: bold;">Atención</h5>
