@@ -383,15 +383,15 @@
 
         const ahora = Date.now();
         const tiempoDesdeInicio = ahora - (juego.tiempoInicio || ahora);
-        const LATENCIA_INICIAL_MS = 16000; // 16 segundos de latencia (20 seg total con countdown de 4s)
-
+        const LATENCIA_INICIAL_MS = 8000;
         if (tiempoDesdeInicio >= LATENCIA_INICIAL_MS && ahora - juego.ultimoObstaculo > tiempoEspera) {
             juego.ultimoObstaculo = ahora;
             if (Math.random() < probabilidadObstaculo) {
                 let randomTipo = Math.random();
-                const Y_RAS_SUELO = SUELO_Y + 50;
+                const ALTO_OBSTACULO = 50;
+                const Y_BASE_OBSTACULO = SUELO_Y + 130 - ALTO_OBSTACULO;
                 let nuevoObstaculo = {
-                    x: ANCHO_CANVAS, y: Y_RAS_SUELO, ancho: 50, alto: 50,
+                    x: ANCHO_CANVAS, y: Y_BASE_OBSTACULO, ancho: 50, alto: ALTO_OBSTACULO,
                     velocidad: juego.velocidadActual, contadoA: false, contadoB: false
                 };
                 if (randomTipo < 0.60) { nuevoObstaculo.tipo = "obstaculoA"; nuevoObstaculo.puntuacion = 10; }
