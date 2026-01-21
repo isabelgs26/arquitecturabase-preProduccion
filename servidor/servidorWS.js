@@ -190,7 +190,12 @@
                     juego.juegoTerminado = true;
                     clearInterval(juego.intervalo);
                     delete juegos[codigo];
-                } else {
+                    sistema.eliminarPartida(codigo, email, function () {
+                        // Actualizar lista de partidas para todos
+                        sistema.obtenerPartidasDisponibles(function (lista) {
+                            io.emit("listaPartidas", lista);
+                        });
+                    });
                 }
                 socket.leave(codigo);
                 socket.partidaCodigo = null;
@@ -451,7 +456,8 @@
 }
 function hayColision(pX, pY, pAncho, pAlto, oX, oY, oAncho, oAlto) {
     const margen = 15;
-    pX + pAncho - margen > oX + margen &&
+    return (
+        pX + pAncho - margen > oX + margen &&
         pX + margen < oX + oAncho - margen &&
         pY + pAlto - margen > oY + margen &&
         pY + margen < oY + oAlto - margen

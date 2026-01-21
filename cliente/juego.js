@@ -70,8 +70,15 @@
         $("#btnSalirJuego").click(function () {
             if (ws && ws.socket) {
                 ws.socket.emit("abandonarPartida");
+                // Detener el juego inmediatamente
+                if (juego) {
+                    juego.juegoTerminado = true;
+                    if (juego.bucle) cancelAnimationFrame(juego.bucle);
+                    juego.musicaFondo.pause();
+                    juego.videoFondo.pause();
+                }
                 setTimeout(() => {
-                    if (cw) cw.mostrarHome($.cookie("nick"));
+                    location.reload();
                 }, 300);
             }
         });

@@ -523,6 +523,10 @@
             if (ws && ws.socket) {
                 ws.socket.emit("salirDespuesDeFin");
             }
+            if (typeof juego !== 'undefined' && juego) {
+                juego.musicaFondo.pause();
+                juego.videoFondo.pause();
+            }
             setTimeout(() => location.reload(), 300);
         });
     };
@@ -736,6 +740,10 @@
         `);
 
         $("#btnSalirAlMenu").off("click").on("click", function () {
+            if (typeof juego !== 'undefined' && juego) {
+                juego.musicaFondo.pause();
+                juego.videoFondo.pause();
+            }
             setTimeout(() => location.reload(), 300);
         });
     };

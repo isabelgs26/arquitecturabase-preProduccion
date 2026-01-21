@@ -361,6 +361,38 @@ Sistema.prototype.eliminarUsuario = function (email, callback) {
 Sistema.prototype.numeroUsuarios = function (callback) {
     this.cad.contarUsuarios({}, callback);
 }
+Sistema.prototype.salirDePartida = function (codigo, email, callback) {
+    let modelo = this;
+    this.cad.obtenerPartida(codigo, function (partida) {
+        if (!partida) {
+            console.log("Intento de salir de partida inexistente.");
+            if (callback) callback(false);
+            return;
+        }
+        // Eliminar el jugador de la lista
+        partida.jugadores = partida.jugadores.filter(j => j.email !== email);
+
+        // Si queda solo el creador, volver a estado incompleta
+        if (partida.jugadores.length === 1) {
+            partida.estado = "incompleta";
+        }
+
+        // Actualizar la partida en BD
+        modelo.cad.actualizarPartida(codigo, partida, function (resultado) {
+            if (resultado) {
+                modelo.cad.insertarLog({
+                    "tipo-operacion": "salirDePartida",
+                    "usuario": email,
+                    "fecha-hora": new Date()
+                }, () => { });
+                console.log("Jugador " + email + " salió de la partida " + codigo);
+                if (callback) callback(true);
+            } else {
+                if (callback) callback(false);
+            }
+        });
+    });
+};
 Sistema.prototype.eliminarPartida = function (codigo, email, callback) {
     let modelo = this;
     this.cad.obtenerPartida(codigo, function (partida) {

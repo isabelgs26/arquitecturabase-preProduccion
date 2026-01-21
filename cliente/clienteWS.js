@@ -94,7 +94,14 @@
             cli.codigo = undefined;
         });
         this.socket.on("rivalSalio", function (datos) {
-            if (cw) cw.mostrarEsperandoRival();
+            // El rival abandonó antes de iniciar el juego
+            if (cw) {
+                cw.limpiar();
+                cw.mostrarMensaje("Tu rival se ha retirado antes de comenzar el juego", "error");
+                setTimeout(() => {
+                    cw.mostrarEsperandoRival();
+                }, 2000);
+            }
         });
         this.socket.on("finPartida", function (datos) {
             if (juego) juego.finalizarPartida(datos);
