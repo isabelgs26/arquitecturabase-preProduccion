@@ -238,7 +238,7 @@
                         jugadores: partida.jugadores
                     });
                     juegos[codigo].intervalo = setInterval(() => {
-                        actualizarJuego(codigo, io, juegos);
+                        actualizarJuego(codigo, io, juegos, sistema);
                     }, 17);
                 });
             });
