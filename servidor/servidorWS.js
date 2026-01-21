@@ -94,6 +94,10 @@
                             socket.email = null;
                             socket.broadcast.to(codigo).emit("rivalSalio", { email });
                             socket.emit("salidaConfirmada");
+                            // Actualizar lista de partidas para que vuelva a estar disponible
+                            sistema.obtenerPartidasDisponibles(function (lista) {
+                                io.emit("listaPartidas", lista);
+                            });
                         });
                     }
                 });

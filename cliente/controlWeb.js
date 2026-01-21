@@ -71,6 +71,10 @@
                     cw.mostrarMensaje("Rellena email y contraseña.", "error");
                 }
             });
+            $("#btnVolver").on("click", function (e) {
+                e.preventDefault();
+                cw.mostrarAcceso();
+            });
         });
     };
     this.mostrarHome = function (nick) {

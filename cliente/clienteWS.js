@@ -93,6 +93,9 @@
             if (cw) cw.mostrarEsperandoRival();
             cli.codigo = undefined;
         });
+        this.socket.on("rivalSalio", function (datos) {
+            if (cw) cw.mostrarEsperandoRival();
+        });
         this.socket.on("finPartida", function (datos) {
             if (juego) juego.finalizarPartida(datos);
         });
