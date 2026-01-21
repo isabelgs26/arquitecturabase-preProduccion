@@ -393,7 +393,9 @@
             if (Math.random() < probabilidadObstaculo) {
                 let randomTipo = Math.random();
                 const ALTO_OBSTACULO = 50;
-                const Y_BASE_OBSTACULO = SUELO_Y + 130 - ALTO_OBSTACULO;
+                const ALTO_JUGADOR = 130;
+                const Y_PIES = SUELO_Y + ALTO_JUGADOR;
+                const Y_BASE_OBSTACULO = Y_PIES - ALTO_OBSTACULO;
                 let nuevoObstaculo = {
                     x: ANCHO_CANVAS, y: Y_BASE_OBSTACULO, ancho: 50, alto: ALTO_OBSTACULO,
                     velocidad: juego.velocidadActual, contadoA: false, contadoB: false
@@ -448,9 +450,8 @@
     }
 }
 function hayColision(pX, pY, pAncho, pAlto, oX, oY, oAncho, oAlto) {
-    const margen = 5;
-    return (
-        pX + pAncho - margen > oX + margen &&
+    const margen = 15;
+    pX + pAncho - margen > oX + margen &&
         pX + margen < oX + oAncho - margen &&
         pY + pAlto - margen > oY + margen &&
         pY + margen < oY + oAlto - margen
