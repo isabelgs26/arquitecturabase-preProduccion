@@ -135,7 +135,7 @@
                             jugadores: partida.jugadores
                         });
                         juegos[codigo].intervalo = setInterval(() => {
-                            actualizarJuego(codigo, io, juegos);
+                            actualizarJuego(codigo, io, juegos, sistema);
                         }, 17);
                     });
                 });
@@ -317,7 +317,7 @@
             });
         });
     };
-    function actualizarJuego(codigo, io, juegos) {
+    function actualizarJuego(codigo, io, juegos, sistema) {
         const juego = juegos[codigo];
         if (!juego || juego.juegoTerminado) return;
         const POSICION_X_JUGADOR = 100;
@@ -371,6 +371,7 @@
                 puntosA: juego.jugadores.A.puntuacion,
                 puntosB: juego.jugadores.B.puntuacion
             });
+            sistema.finalizarPartida(codigo, function () { });
             clearInterval(juego.intervalo);
             delete juegos[codigo];
             return;
@@ -419,6 +420,7 @@
             if (puntosA > puntosB) ganador = "A";
             else if (puntosB > puntosA) ganador = "B";
             io.to(codigo).emit("finPartida", { ganador, puntosA, puntosB });
+            sistema.finalizarPartida(codigo, function () { });
             clearInterval(juego.intervalo);
             const sockets = io.sockets.adapter.rooms.get(codigo);
             if (sockets) {
