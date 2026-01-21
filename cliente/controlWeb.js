@@ -1,6 +1,7 @@
 ﻿function ControlWeb() {
     let cw = this;
     this.partidasCache = [];
+
     this.comprobarSesion = function () {
         let nick = $.cookie("nick");
         if (nick) {
@@ -13,6 +14,7 @@
             cw.ocultarBotonCerrarSesion();
         }
     };
+
     this.mostrarAcceso = function () {
         this.limpiar();
         this.ocultarBotonCerrarSesion();
@@ -56,6 +58,7 @@
             cw.mostrarRegistro();
         });
     };
+
     this.mostrarRegistro = function () {
         this.limpiar();
         $("#au").load("./registro.html", function () {
@@ -77,6 +80,7 @@
             });
         });
     };
+
     this.mostrarHome = function (nick) {
         this.limpiar();
         this.mostrarBotonCerrarSesion();
@@ -84,23 +88,27 @@
         cw.mostrarMensaje("Bienvenido de nuevo, " + nickUsuario, "exito");
         this.mostrarCrearPartida();
     };
+
     this.salir = function () {
         $.removeCookie("nick");
         $.removeCookie("email");
         location.reload();
     };
+
     this.mostrarBotonCerrarSesion = function () {
         $("#menuJugar").show();
         $("#menuGestion").show();
         $("#cerrarSesionItem").show();
         $(".nav-item").first().hide();
     };
+
     this.ocultarBotonCerrarSesion = function () {
         $("#menuJugar").hide();
         $("#menuGestion").hide();
         $("#cerrarSesionItem").hide();
         $(".nav-item").first().show();
     };
+
     this.mostrarCrearPartida = function () {
         this.limpiar();
         let html = `
@@ -130,6 +138,7 @@
             cw.mostrarListaPartidas(cw.partidasCache);
         }
     };
+
     this.mostrarListaPartidas = function (lista) {
         cw.partidasCache = lista;
         let listaDiv = $("#listaPartidas");
@@ -156,6 +165,7 @@
             listaDiv.html(ul);
         }
     };
+
     this.mostrarEsperandoRival = function () {
         this.limpiar();
         let codigoStr = ws.codigo || '...';
@@ -196,6 +206,7 @@
             });
         });
     };
+
     this.mostrarEsperandoInicio = function (codigo, esCreador) {
         this.limpiar();
         console.log("[mostrarEsperandoInicio] codigo:", codigo, "esCreador:", esCreador);
@@ -235,6 +246,7 @@
             cw.mostrarCrearPartida();
         });
     };
+
     this.mostrarObtenerUsuarios = function () {
         this.limpiar();
         let html = `
@@ -269,6 +281,7 @@
         $("#btnOU").on("click", cargarUsuarios);
         cargarUsuarios();
     };
+
     this.mostrarNumeroUsuarios = function () {
         this.limpiar();
         let html = `
@@ -283,6 +296,7 @@
             rest.numeroUsuarios();
         });
     };
+
     this.mostrarUsuarioActivo = function () {
         this.limpiar();
         let html = `
@@ -310,6 +324,7 @@
             } else cw.mostrarMensaje("Introduce un email válido", "error");
         });
     };
+
     this.mostrarCierrePorAbandono = function () {
         this.limpiar();
         let html = `
@@ -366,6 +381,7 @@
             cw.mostrarCrearPartida();
         });
     };
+
     this.mostrarModalGameOver = function (yoGano, mensaje, puntosA, puntosB, soyJugadorA) {
         let titulo = yoGano ? "¡VICTORIA! 🏆" : (mensaje.includes("EMPATE") ? "¡EMPATE! 🤝" : "¡DERROTA! 💀");
         let colorHeader = yoGano ? "#10b981" : (mensaje.includes("EMPATE") ? "#f59e0b" : "#ef4444");
@@ -530,6 +546,7 @@
             setTimeout(() => location.reload(), 300);
         });
     };
+
     this.mostrarSolicitudRivalRevancha = function () {
         let modal = $("#modalGameOver");
         if (!modal.hasClass('show')) modal.modal('show');
@@ -555,6 +572,7 @@
             cw.mostrarHome($.cookie("nick"));
         });
     };
+
     this.mostrarRivalaceptaRevancha = function () {
         let modal = $("#modalGameOver");
         let footer = modal.find('.modal-footer');
@@ -565,6 +583,7 @@
             </div>
         `);
     };
+
     this.mostrarRivalRechazoRevancha = function () {
         $("#modalGameOver").modal("hide");
         $('body').removeClass('modal-open');
@@ -600,6 +619,7 @@
             cw.mostrarHome($.cookie("nick"));
         });
     };
+
     this.mostrarRivalAbandonoRevancha = function () {
         this.limpiar();
         cw.mostrarMensaje("El rival se ha desconectado durante la revancha", "error");
@@ -607,6 +627,7 @@
             cw.mostrarHome($.cookie("nick"));
         }, 2000);
     }
+
     this.mostrarEliminarUsuario = function () {
         this.limpiar();
         let html = `
@@ -699,6 +720,7 @@
             setTimeout(() => $("#msg").remove(), 500);
         }, 3000);
     };
+
     this.mostrarModal = function (m) {
         $("#msg").remove();
         let mensaje = m || "Ha ocurrido un error desconocido (mensaje vacío)";
@@ -706,6 +728,7 @@
         $('#mBody').html(cadena);
         $('#miModal').modal();
     };
+
     this.usuarioLogueado = function (usuario) {
         if (usuario.email) {
             ws.email = usuario.email;

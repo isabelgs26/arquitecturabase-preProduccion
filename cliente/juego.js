@@ -60,17 +60,20 @@
                 juego.saltar();
             }
         });
+
         this.canvas.addEventListener("mousedown", function () {
             juego.saltar();
         });
+
         this.canvas.addEventListener("touchstart", function (e) {
             e.preventDefault();
             juego.saltar();
         }, { passive: false });
+
+        //Salir de la partida cuando ya se ha iniciado
         $("#btnSalirJuego").click(function () {
             if (ws && ws.socket) {
                 ws.socket.emit("abandonarPartida");
-                // Detener el juego inmediatamente
                 if (juego) {
                     juego.juegoTerminado = true;
                     if (juego.bucle) cancelAnimationFrame(juego.bucle);
@@ -83,6 +86,7 @@
             }
         });
     }
+    //EMPIEZA LA PARTIDA!!
     this.iniciar = function (soyA) {
         this.soyJugadorA = soyA;
         if (!this.canvas) this.ini();
@@ -135,6 +139,8 @@
         updateCount();
     }
 
+    //Salto del personaje papra evitar obstaculos
+    //Max dos saltos a la vez
     this.saltar = function () {
         let miPersonaje = this.soyJugadorA ? this.personajeA : this.personajeB;
         if (miPersonaje.contadorSaltos < 2) {
@@ -149,6 +155,8 @@
             if (ws) ws.saltar();
         }
     }
+
+    //Bucle principal del juego 
     this.actualizar = function () {
         if (this.juegoTerminado) return;
         if (this.juegoIniciado) {
@@ -158,6 +166,9 @@
         this.dibujar();
         this.bucle = requestAnimationFrame(() => this.actualizar());
     }
+
+
+    //Logica de los saltos
     this.aplicarFisica = function (jugador) {
         if (jugador.y < this.sueloY || jugador.saltando) {
             jugador.vy += this.gravedad;
@@ -175,17 +186,22 @@
             jugador.contadorSaltos = 0;
         }
     }
+
+    //Dibujamos el escenario con los personajes y los obstaculos
     this.dibujar = function () {
         this.ctx.fillStyle = "#87CEEB";
         this.ctx.fillRect(0, 0, this.ancho, this.alto);
+
         if (this.videoFondo.readyState >= 2) {
             this.ctx.drawImage(this.videoFondo, 0, 0, this.ancho, this.alto);
         }
+
         if (this.soyJugadorA) {
             this.dibujarPersonaje(this.personajeA, this.imgPersonajeA, "red");
         } else {
             this.dibujarPersonaje(this.personajeB, this.imgPersonajeB, "blue");
         }
+
         this.dibujarObstaculos();
         this.gestionarParticulas();
 
@@ -231,20 +247,17 @@
         this.ctx.lineWidth = 2;
         this.ctx.strokeRect(barX, barY, barWidth, barHeight);
 
-        // Calcular color según velocidad (6 = azul, 16 = rojo)
         const velocidadNormalizada = Math.min(Math.max((this.velocidadActual - 6) / 10, 0), 1);
         const gradient = this.ctx.createLinearGradient(barX, barY, barX + barWidth, barY);
 
+        //Puntuación influye en el color de la barra  de opuntuación
         if (velocidadNormalizada < 0.33) {
-            // Nivel bajo: Azul a Cyan
             gradient.addColorStop(0, "#3b82f6");
             gradient.addColorStop(1, "#06b6d4");
         } else if (velocidadNormalizada < 0.66) {
-            // Nivel medio: Cyan a Naranja
             gradient.addColorStop(0, "#06b6d4");
             gradient.addColorStop(1, "#f97316");
         } else {
-            // Nivel alto: Naranja a Rojo
             gradient.addColorStop(0, "#f97316");
             gradient.addColorStop(1, "#dc2626");
         }
@@ -255,6 +268,7 @@
 
         this.ctx.restore();
     }
+    //Efecto por choque
     this.shakeCanvas = function () {
         const canvas = document.getElementById('miCanvas');
         if (!canvas) return;
@@ -268,6 +282,7 @@
             document.head.appendChild(style);
         }
     }
+
     this.dibujarSombra = function (pj) {
         this.ctx.save();
         this.ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
@@ -281,6 +296,7 @@
         this.ctx.fill();
         this.ctx.restore();
     }
+
     this.dibujarPersonaje = function (pj, img, colorBackup) {
         this.dibujarSombra(pj);
         if (img.complete && img.naturalWidth !== 0) {
@@ -290,6 +306,8 @@
             this.ctx.fillRect(pj.x, pj.y, this.anchoP, this.altoP);
         }
     }
+
+    //Generar obstaculos aleatorios
     this.dibujarObstaculos = function () {
         if (!this.obstaculos) return;
         let ajusteAltura = 35;
@@ -306,6 +324,8 @@
             }
         });
     }
+
+    //Logíca al finalizar lsd partidas
     this.finalizarPartida = function (datos) {
         this.juegoTerminado = true;
         this.musicaFondo.pause();
@@ -343,6 +363,8 @@
             alert((yoGano ? "GANASTE" : "PERDISTE") + "\n" + mensaje);
         }
     }
+
+    //Reiniciar la partida para revancha
     this.reiniciarPartida = function () {
         this.juegoTerminado = false;
         this.obstaculos = [];
@@ -356,12 +378,15 @@
         if (this.bucle) cancelAnimationFrame(this.bucle);
         this.bucle = requestAnimationFrame(() => this.actualizar());
     }
+
+    //LAS PARTIDAS TIENEN DIFERENTES ESTADOS
     this.sincronizarEstado = function (estado) {
         if (!estado || !estado.jugadores) return;
         this.personajeA.puntuacion = estado.jugadores.A.puntuacion;
         this.personajeB.puntuacion = estado.jugadores.B.puntuacion;
         this.personajeA.x = estado.jugadores.A.x;
         this.personajeB.x = estado.jugadores.B.x;
+
         if (this.soyJugadorA) {
             this.personajeB.y = estado.jugadores.B.y;
         }
@@ -373,11 +398,13 @@
             activo: true,
             img: this.imgObstaculos[o.tipo]
         }));
+
         this.juegoTerminado = estado.juegoTerminado;
         if (estado.velocidad) {
             this.velocidadActual = estado.velocidad;
         }
     }
+
     this.crearPolvo = function (x, y) {
         for (let i = 0; i < 10; i++) {
             this.particulas.push({
@@ -391,6 +418,7 @@
             });
         }
     }
+
     this.gestionarParticulas = function () {
         for (let i = this.particulas.length - 1; i >= 0; i--) {
             let p = this.particulas[i];
